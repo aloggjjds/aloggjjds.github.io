@@ -1,0 +1,122 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Алгебра",
+      "icon": "algebra",
+      "question": "Корни уравнения x² − 5x + 6 = 0?",
+      "options": ["x = 2 и x = 3", "x = 1 и x = 6"],
+      "correctIndex": 0,
+      "reward": 50,
+      "priority": false
+    },
+    {
+      "id": 2,
+      "title": "Геометрия",
+      "icon": "geometry",
+      "question": "Катеты 3 и 4. Чему равна гипотенуза?",
+      "options": ["5", "6"],
+      "correctIndex": 0,
+      "reward": 50,
+      "priority": false
+    },
+    {
+      "id": 3,
+      "title": "Физика",
+      "icon": "physics",
+      "question": "U = 12В, R = 4 Ом. Чему равна сила тока (закон Ома)?",
+      "options": ["3 А", "48 А"],
+      "correctIndex": 0,
+      "reward": 70,
+      "priority": true
+    },
+    {
+      "id": 4,
+      "title": "Химия",
+      "icon": "chemistry",
+      "question": "Сколько атомов кислорода в молекуле H₂O?",
+      "options": ["1", "2"],
+      "correctIndex": 0,
+      "reward": 70,
+      "priority": false
+    },
+    {
+      "id": 5,
+      "title": "Русский язык",
+      "icon": "russian",
+      "question": "Какой частью речи является «быстро» в «Он бежал быстро»?",
+      "options": ["Наречие", "Прилагательное"],
+      "correctIndex": 0,
+      "reward": 40,
+      "priority": false
+    },
+    {
+      "id": 6,
+      "title": "География",
+      "icon": "geography",
+      "question": "Какой климатический пояс преобладает в средней полосе России?",
+      "options": ["Умеренный", "Тропический"],
+      "correctIndex": 0,
+      "reward": 40,
+      "priority": false
+    },
+    {
+      "id": 7,
+      "title": "Биология",
+      "icon": "biology",
+      "question": "Сколько камер в сердце человека?",
+      "options": ["4", "3"],
+      "correctIndex": 0,
+      "reward": 60,
+      "priority": false
+    },
+    {
+      "id": 8,
+      "title": "История",
+      "icon": "history",
+      "question": "В каком веке произошла Северная война?",
+      "options": ["XVIII век", "XVI век"],
+      "correctIndex": 0,
+      "reward": 50,
+      "priority": false
+    },
+    {
+      "id": 9,
+      "title": "Английский язык",
+      "icon": "english",
+      "question": "«I ___ finished my homework already.»",
+      "options": ["have", "has"],
+      "correctIndex": 0,
+      "reward": 40,
+      "priority": false
+    },
+    {
+      "id": 10,
+      "title": "Информатика",
+      "icon": "informatics",
+      "question": "Число 45 в двоичной системе счисления?",
+      "options": ["101101", "110101"],
+      "correctIndex": 0,
+      "reward": 60,
+      "priority": false
+    },
+    {
+      "id": 11,
+      "title": "Литература",
+      "icon": "literature",
+      "question": "Кто автор романа «Герой нашего времени»?",
+      "options": ["М.Ю. Лермонтов", "А.С. Пушкин"],
+      "correctIndex": 0,
+      "reward": 40,
+      "priority": false
+    }
+  ],
+  "medData": {
+    "message": "Показать все медданные",
+    "personalMessages": {
+      "crazy65": {
+        "message": "Особое сообщение для crazy65!"
+      }
+    }
+  }
+}
