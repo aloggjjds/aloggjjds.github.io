@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Лента — Перевод по коду</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone {
+            width: 100%;
+            max-width: 393px;
+            height: 100%;
+            max-height: 852px;
+            background: #F2F2F7;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(255,255,255,0.1);
+        }
+
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 280px;
+            background: #F2F2F7;
+            z-index: 0;
+        }
+
+        .scroll-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            scrollbar-width: none;
+            z-index: 1;
+            height: 100%;
+        }
+        .scroll-content::-webkit-scrollbar { display: none; }
+
+        .content-wrap {
+            position: relative;
+            z-index: 2;
+            padding: 54px 16px 180px;
+        }
+
+        h1 {
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            letter-spacing: -0.4px;
+            color: #000;
+        }
+
+        /* ===== МИНИАТЮРА НИКА ===== */
+        .nick-avatar {
+            position: absolute;
+            top: 54px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5E5CE6 0%, #007AFF 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            z-index: 10;
+            user-select: none;
+            transition: transform 0.2s;
+        }
+        .nick-avatar:active { transform: scale(0.95); }
+
+        /* ===== ПОЛНОЭКРАННЫЙ ПРОФИЛЬ (из newprofile.html) ===== */
+        .profile-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #F2F2F7;
+            z-index: 999;
+            display: none;
+            overflow-y: auto;
+        }
+        .profile-overlay.active {
+            display: block;
+        }
+
+        .profile-content {
+            padding: 60px 24px 40px;
+        }
+
+        .profile-back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .profile-back-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: #000;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .profile-avatar-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5E5CE6 0%, #007AFF 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 44px;
+            margin: 0 auto 16px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .profile-name-display {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+            color: #000;
+        }
+
+        .profile-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .profile-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8E8E93;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-input-group {
+            margin-bottom: 16px;
+        }
+
+        .profile-input-group label {
+            display: block;
+            font-size: 14px;
+            color: #8E8E93;
+            margin-bottom: 8px;
+        }
+
+        .profile-input-group input {
+            width: 100%;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .profile-input-group input:focus {
+            border-color: #007AFF;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #F2F2F7;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1c1c1e;
+        }
+
+        .setting-description {
+            font-size: 13px;
+            color: #8E8E93;
+            margin-top: 2px;
+        }
+
+        /* ===== СЛАЙДЕРЫ ===== */
+        .toggle-switch {
+            width: 51px;
+            height: 31px;
+            border-radius: 31px;
+            background: #E9E9EB;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 27px;
+            height: 27px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+        .toggle-switch.active {
+            background: #34C759;
+        }
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ (СТАРЫЙ) ===== */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .link-blue {
+            color: #007AFF;
+            font-size: 17px;
+            text-decoration: none;
+            font-weight: 400;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            width: 100%;
+        }
+
+        .card-bonus {
+            padding: 20px 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #34C759;
+        }
+
+        .chevron {
+            color: #C7C7CC;
+            font-size: 20px;
+            font-weight: 300;
+            line-height: 1;
+        }
+
+        .balance-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding-bottom: 4px;
+        }
+
+        .balance-number {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -1px;
+            color: #34C759;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: #FFFFFF;
+            border: none;
+            border-radius: 16px;
+            padding: 14px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .action-btn:active {
+            opacity: 0.8;
+        }
+
+        .action-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        .action-btn.primary {
+            color: #007AFF;
+        }
+
+        .card-meddata {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .card-meddata:active {
+            transform: scale(0.98);
+        }
+
+        .meddata-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .icon-svg {
+            width: 22px;
+            height: 22px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .icon-heart-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-subscriptions {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 24px 0 16px;
+            letter-spacing: -0.3px;
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .task-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            height: 248px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid transparent;
+            transition: border-color .2s;
+        }
+
+        .task-card.done {
+            border-color: #58CC02;
+            background: #FAFFF5;
+        }
+
+        .task-card.priority {
+            border-color: #5E5CE6;
+            background: linear-gradient(135deg, #F8F7FF 0%, #FFFFFF 100%);
+            box-shadow: 0 4px 16px rgba(94,92,230,0.15);
+        }
+
+        .priority-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #5E5CE6;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            z-index: 2;
+        }
+
+        .task-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .task-card-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #E8F8EC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #34C759;
+            flex-shrink: 0;
+        }
+
+        .task-card.priority .task-card-icon {
+            background: #EEEDFF;
+            color: #5E5CE6;
+        }
+
+        .task-card-reward {
+            font-size: 13px;
+            font-weight: 800;
+            color: #34C759;
+            background: #E8F8EC;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .task-card.priority .task-card-reward {
+            color: #5E5CE6;
+            background: #EEEDFF;
+        }
+
+        .task-card-title {
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #1c1c1e;
+        }
+
+        .task-card-question {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+            color: #48484A;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 47px;
+        }
+
+        .duo-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .duo-option {
+            border: 2px solid #E5E5EA;
+            border-bottom: 3px solid #DADADE;
+            border-radius: 10px;
+            background: #fff;
+            padding: 7px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: left;
+            color: #1c1c1e;
+            cursor: pointer;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 32px;
+            transition: transform .05s, background .15s, border-color .15s;
+        }
+
+        .duo-option:active {
+            transform: translateY(1px);
+            border-bottom-width: 2px;
+        }
+
+        .duo-option.correct {
+            background: #D7FFB8;
+            border-color: #58CC02;
+            color: #2B6600;
+        }
+
+        .duo-option.wrong {
+            background: #FFDFE0;
+            border-color: #FF4B4B;
+            color: #B30000;
+            animation: shakeOption .4s;
+        }
+
+        .duo-option[disabled] {
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        @keyframes shakeOption {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .task-feedback {
+            font-size: 10.5px;
+            font-weight: 700;
+            min-height: 13px;
+            text-align: center;
+        }
+
+        .task-feedback.success { color: #34C759; }
+        .task-feedback.error { color: #FF3B30; }
+
+        .card-energy {
+            padding: 20px 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .energy-header .card-title {
+            color: #34C759;
+            font-weight: 600;
+        }
+
+        .energy-main-text {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.3;
+            letter-spacing: -0.2px;
+            margin-top: 4px;
+        }
+
+        .progress-block {
+            margin-top: 28px;
+        }
+
+        .progress-label {
+            color: #8E8E93;
+            font-size: 17px;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #E5E5EA;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            width: 100%;
+            height: 100%;
+            background: #34C759;
+            border-radius: 3px;
+        }
+
+        .energy-value {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            color: #34C759;
+        }
+
+        .energy-unit {
+            font-size: 17px;
+            color: #8E8E93;
+            font-weight: 400;
+        }
+
+        .week-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 32px;
+            color: #8E8E93;
+            font-size: 13px;
+            padding: 0 20px;
+        }
+
+        .day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .day.active {
+            color: #34C759;
+            font-weight: 600;
+        }
+
+        .bottom-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .capsule-menu {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            width: 190px;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border-radius: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.75),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            padding: 6px;
+            pointer-events: auto;
+        }
+
+        .slider-bg {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 89px;
+            height: 60px;
+            background: rgba(0, 122, 255, 0.15);
+            border-radius: 30px;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .capsule-menu.premium-active .slider-bg {
+            transform: translateX(89px);
+        }
+
+        .menu-btn {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            height: 100%;
+            border: none;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .menu-btn.active {
+            color: #007AFF;
+        }
+
+        .menu-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.75),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: transform 0.2s ease;
+            transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .search-btn:active {
+            transform: scale(0.92);
+        }
+
+        .search-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: #000;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #FFFFFF;
+            border-radius: 22px;
+            padding: 24px;
+            width: 90%;
+            max-width: 340px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: #8E8E93;
+            text-align: center;
+        }
+
+        .modal-qr {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            background: #F8F8FA;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .modal-qr canvas {
+            max-width: 180px;
+            max-height: 180px;
+        }
+
+        .modal-qr img {
+            max-width: 180px;
+            max-height: 180px;
+        }
+
+        .modal-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modal-input label {
+            font-size: 14px;
+            color: #8E8E93;
+        }
+
+        .modal-input input {
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .modal-input input:focus {
+            border-color: #007AFF;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .modal-btn:active {
+            opacity: 0.8;
+        }
+
+        .modal-btn.primary {
+            background: #007AFF;
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #E5E5EA;
+            color: #000;
+        }
+
+        .modal-status {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            text-align: center;
+            font-size: 14px;
+            color: #8E8E93;
+        }
+
+        .modal-status.success {
+            color: #34C759;
+            font-weight: 600;
+        }
+
+        .modal-status.error {
+            color: #FF3B30;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            border: none;
+            background: #007AFF;
+            color: white;
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .copy-btn:active {
+            opacity: 0.8;
+        }
+
+        .hidden { display: none !important; }
+        
+        .meddata-notification {
+            margin-top: 8px;
+            padding: 12px;
+            background: #F2F2F7;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #1c1c1e;
+            line-height: 1.4;
+        }
+
+        .meddata-notification .emoji {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .notification-personal {
+            background: #EEEDFF;
+            border: 1px solid #5E5CE6;
+            color: #5E5CE6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone">
+    <div class="header-bg"></div>
+
+    <div class="scroll-content">
+        <div class="content-wrap">
+            <h1>Лента</h1>
+
+            <!-- Миниатюра ника -->
+            <div class="nick-avatar" id="nickAvatar" onclick="openProfileModal()">U</div>
+
+            <div class="section-header">
+                <h2>Ваши бонусы</h2>
+                <a href="#" class="link-blue" onclick="event.preventDefault()">Подробнее</a>
+            </div>
+
+            <div class="card card-bonus">
+                <div class="card-top-row">
+                    <div class="card-title">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                        </svg>
+                        Мои бонусы
+                    </div>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-number">400</span>
+                </div>
+            </div>
+
+            <!-- Две кнопки действий -->
+            <div class="action-buttons">
+                <button class="action-btn primary" onclick="openSendModal()">
+                    <svg viewBox="0 0 24 24"><path d="M22 2L11 13" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Отправить другу
+                </button>
+                <button class="action-btn" onclick="openReceiveModal()">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v3h-3M14 21h3M21 21h-3" stroke-linecap="round"/></svg>
+                    Ввести код
+                </button>
+            </div>
+
+            <div class="card card-meddata" id="medDataCard" onclick="toggleMedData()">
+                <div class="meddata-left">
+                    <div class="icon-heart-box" id="medDataIconBox">
+                        <svg class="icon-svg" viewBox="0 0 24 24" id="medDataIcon">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </div>
+                    <span id="medDataTitle">Показать все медданные</span>
+                </div>
+                <span class="chevron" id="medDataChevron">›</span>
+            </div>
+
+            <div id="medDataContent" style="display:none;">
+                <div class="card meddata-notification" id="medDataNotification">
+                    <span class="emoji" id="medDataEmoji">💚</span>
+                    <span id="medDataMessage">Ваши показатели в норме</span>
+                </div>
+            </div>
+
+            <!-- Задания -->
+            <div class="title-subscriptions" id="tasksTitle">Задания · 8 класс</div>
+            <div class="tasks-grid" id="tasksGrid">
+                <!-- Задания будут загружены из конфигурации -->
+            </div>
+
+            <div class="title-subscriptions">Подборки</div>
+
+            <div class="card card-energy">
+                <div class="energy-header">
+                    <div class="card-title">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                        </svg>
+                        Энергия активности
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="energy-main-text">
+                    В среднем за последние 7 дней Вы сжигали по 112 килокалорий в день.
+                </div>
+
+                <div class="progress-block">
+                    <div class="progress-label">Средн.<br>Килокалории</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="energy-value">
+                        112
+                        <span class="energy-unit">ккал</span>
+                    </div>
+                </div>
+
+                <div class="week-row">
+                    <div class="day active">Ч</div>
+                    <div class="day">П</div>
+                    <div class="day">С</div>
+                    <div class="day">В</div>
+                    <div class="day">П</div>
+                    <div class="day">В</div>
+                    <div class="day">С</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-area">
+        <div class="capsule-menu" id="capsuleMenu">
+            <div class="slider-bg"></div>
+            
+            <button class="menu-btn active" onclick="switchTab(0)">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span>Лента</span>
+            </button>
+            
+            <button class="menu-btn" id="premiumBtn" onclick="switchTab(1)">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L14.5 9H22L16 13.5L18.5 21L12 16.5L5.5 21L8 13.5L2 9H9.5L12 2Z"/>
+                </svg>
+                <span>Премиум</span>
+            </button>
+        </div>
+
+        <button class="search-btn" id="searchBtn" onclick="openSearch()">
+            <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ПОЛНОЭКРАННЫЙ ПРОФИЛЬ (как в newprofile.html) -->
+    <div class="profile-overlay" id="profileOverlay">
+        <button class="profile-back-btn" onclick="closeProfileModal()">
+            <svg viewBox="0 0 24 24">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        <div class="profile-content">
+            <div class="profile-avatar-large" id="profileAvatarLarge">U</div>
+            <div class="profile-name-display" id="profileNameDisplay">user1234</div>
+
+            <div class="profile-section">
+                <div class="profile-section-title">Профиль</div>
+                <div class="profile-input-group">
+                    <label>Никнейм (меняется раз в 20 дней)</label>
+                    <input type="text" id="profileNickInput" placeholder="@myname532" oninput="validateNickInput(this)">
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-section-title">Настройки</div>
+                <div class="setting-row">
+                    <div>
+                        <div class="setting-label">Персональные уведомления</div>
+                        <div class="setting-description">Показывать медданные</div>
+                    </div>
+                    <div class="toggle-switch active" onclick="toggleNotifications(this)"></div>
+                </div>
+                <div class="setting-row">
+                    <div>
+                        <div class="setting-label">Использование Bluetooth</div>
+                        <div class="setting-description">Обмен данными по Bluetooth</div>
+                    </div>
+                    <div class="toggle-switch" onclick="toggleBluetooth(this)"></div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-section-title">Статистика</div>
+                <div style="font-size: 15px; color: #1c1c1e;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span>Выполнено заданий:</span>
+                        <span id="completedTasksCount" style="font-weight: 700;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span>Всего бонусов:</span>
+                        <span id="totalBonusEarned" style="font-weight: 700; color: #34C759;">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно перевода -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">Отправить бонусы</div>
+            <div class="modal-subtitle" id="modalSubtitle">Укажите ник друга и сумму</div>
+
+            <div class="modal-input" id="nicknameInputBlock">
+                <label>Никнейм получателя</label>
+                <input type="text" id="nicknameInput" placeholder="Введите никнейм друга">
+            </div>
+
+            <div class="modal-input" id="amountInputBlock">
+                <label>Сумма бонусов</label>
+                <input type="number" id="amountInput" placeholder="Введите сумму" min="1" max="400">
+            </div>
+
+            <div class="modal-input" id="codeInputBlock" style="display:none;">
+                <label>Код перевода</label>
+                <input type="text" id="codeInput" placeholder="Вставьте полученный код">
+            </div>
+
+            <div class="modal-qr" id="codeResultBlock" style="display:none; flex-direction:column; gap:10px;">
+                <div style="font-size:14px;color:#8E8E93;">Отправьте этот код другу:</div>
+                <div id="generatedCode" style="font-size:15px; font-weight:600; color:#007AFF; word-break:break-all; text-align:center;"></div>
+                <button class="copy-btn" onclick="copyGeneratedCode()">Копировать код</button>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="closeModal()">Закрыть</button>
+                <button class="modal-btn primary" id="modalActionBtn" onclick="sendOrReceive()">Перевести</button>
+            </div>
+
+            <div class="modal-status" id="modalStatus"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно поиска -->
+    <div class="modal-overlay" id="searchOverlay">
+        <div class="modal">
+            <div class="modal-title">Поиск заданий</div>
+            <div class="modal-input">
+                <label>Название предмета</label>
+                <input type="text" id="searchInput" placeholder="Например: Алгебра" oninput="performSearch()">
+            </div>
+            <div id="searchResults" style="display:flex; flex-direction:column; gap:10px; max-height:200px; overflow-y:auto;"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="closeSearch()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===== КОНФИГУРАЦИЯ =====
+    let APP_CONFIG = {
+        tasks: [],
+        medData: {
+            emoji: "💚",
+            color: "#E8F8EC",
+            message: "Ваши показатели в норме",
+            personalMessages: {
+                "crazy65": {
+                    emoji: "🌈",
+                    color: "#EEEDFF",
+                    message: "Особое сообщение для crazy65!"
+                }
+            }
+        }
+    };
+
+    const CONFIG_URL = 'https://raw.githubusercontent.com/aloggjjds/lettertwo/main/config.json';
+
+    async function loadConfig() {
+        try {
+            const response = await fetch(CONFIG_URL, { cache: 'no-store' });
+            if (response.ok) {
+                APP_CONFIG = await response.json();
+                console.log('Конфигурация загружена с GitHub');
+            } else {
+                console.log('GitHub недоступен, используем локальную конфигурацию');
+                loadLocalConfig();
+            }
+        } catch (e) {
+            console.log('Ошибка загрузки с GitHub, используем локальную:', e);
+            loadLocalConfig();
+        }
+        applyConfig();
+    }
+
+    function loadLocalConfig() {
+        APP_CONFIG.tasks = [
+            {
+                id: 1,
+                title: "Алгебра",
+                icon: "📐",
+                question: "Корни уравнения x² − 5x + 6 = 0?",
+                options: ["x = 2 и x = 3", "x = 1 и x = 6"],
+                correctIndex: 0,
+                reward: 50,
+                priority: false
+            },
+            {
+                id: 2,
+                title: "Геометрия",
+                icon: "📏",
+                question: "Катеты 3 и 4. Чему равна гипотенуза?",
+                options: ["5", "6"],
+                correctIndex: 0,
+                reward: 50,
+                priority: false
+            }
+        ];
+    }
+
+    function applyConfig() {
+        updateMedData();
+        renderTasks();
+    }
+
+    function updateMedData() {
+        const currentNick = localStorage.getItem('myNickname') || 'user1234';
+        let medConfig = APP_CONFIG.medData;
+        
+        if (medConfig.personalMessages && medConfig.personalMessages[currentNick]) {
+            const personal = medConfig.personalMessages[currentNick];
+            medConfig.emoji = personal.emoji || medConfig.emoji;
+            medConfig.color = personal.color || medConfig.color;
+            medConfig.message = personal.message || medConfig.message;
+        }
+        
+        document.getElementById('medDataEmoji').textContent = medConfig.emoji;
+        document.getElementById('medDataMessage').textContent = medConfig.message;
+        document.getElementById('medDataIconBox').style.background = medConfig.color;
+        document.getElementById('medDataNotification').style.background = medConfig.color;
+    }
+
+    function renderTasks() {
+        const grid = document.getElementById('tasksGrid');
+        grid.innerHTML = '';
+        
+        const sortedTasks = [...APP_CONFIG.tasks].sort((a, b) => {
+            if (a.priority && !b.priority) return -1;
+            if (!a.priority && b.priority) return 1;
+            return 0;
+        });
+        
+        sortedTasks.forEach(task => {
+            const card = createTaskCard(task);
+            grid.appendChild(card);
+        });
+    }
+
+    function createTaskCard(task) {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.dataset.taskId = task.id;
+        card.dataset.title = task.title;
+        
+        if (task.priority) {
+            card.classList.add('priority');
+            card.innerHTML += '<div class="priority-badge">Приоритет</div>';
+        }
+        
+        const completedTasks = JSON.parse(localStorage.getItem('completedTasks') || '[]');
+        if (completedTasks.includes(task.id)) {
+            card.classList.add('done');
+        }
+        
+        card.innerHTML += `
+            <div class="task-card-header">
+                <div class="task-card-icon">${task.icon || '📘'}</div>
+                <span class="task-card-reward">+${task.reward}</span>
+            </div>
+            <div class="task-card-title">${task.title}</div>
+            <div class="task-card-question">${task.question}</div>
+            <div class="duo-options">
+                ${task.options.map((opt, idx) => 
+                    `<button class="duo-option" onclick="checkAnswer(this, ${idx === task.correctIndex})" ${completedTasks.includes(task.id) ? 'disabled' : ''}>${opt}</button>`
+                ).join('')}
+            </div>
+            <div class="task-feedback"></div>
+        `;
+        
+        return card;
+    }
+
+    function checkAnswer(btn, isCorrect) {
+        const card = btn.closest('.task-card');
+        const taskId = parseInt(card.dataset.taskId);
+        
+        const completedTasks = JSON.parse(localStorage.getItem('completedTasks') || '[]');
+        if (completedTasks.includes(taskId)) return;
+        
+        const feedback = card.querySelector('.task-feedback');
+        const reward = parseInt(card.querySelector('.task-card-reward').textContent.replace('+', ''));
+
+        if (isCorrect) {
+            btn.classList.add('correct');
+            card.querySelectorAll('.duo-option').forEach(b => b.disabled = true);
+            card.classList.add('done');
+            
+            completedTasks.push(taskId);
+            localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+            
+            userBalance += reward;
+            updateBalance();
+            
+            feedback.textContent = 'Верно! +' + reward + ' бонусов';
+            feedback.className = 'task-feedback success';
+            
+            updateStats();
+        } else {
+            btn.classList.add('wrong');
+            feedback.textContent = 'Неверно, попробуй ещё раз';
+            feedback.className = 'task-feedback error';
+            setTimeout(() => btn.classList.remove('wrong'), 400);
+        }
+    }
+
+    function updateStats() {
+        const completedTasks = JSON.parse(localStorage.getItem('completedTasks') || '[]');
+        const totalEarned = JSON.parse(localStorage.getItem('totalEarned') || '0');
+        
+        document.getElementById('completedTasksCount').textContent = completedTasks.length;
+        document.getElementById('totalBonusEarned').textContent = totalEarned;
+    }
+
+    // ===== МЕДДАННЫЕ =====
+    function toggleMedData() {
+        const content = document.getElementById('medDataContent');
+        const chevron = document.getElementById('medDataChevron');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            chevron.textContent = '⌄';
+            document.getElementById('medDataTitle').textContent = 'Скрыть медданные';
+        } else {
+            content.style.display = 'none';
+            chevron.textContent = '›';
+            document.getElementById('medDataTitle').textContent = 'Показать все медданные';
+        }
+    }
+
+    // ===== БАЗОВАЯ ЛОГИКА =====
+    function switchTab(index) {
+        const menu = document.getElementById('capsuleMenu');
+        const buttons = menu.querySelectorAll('.menu-btn');
+        
+        buttons.forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+        });
+        
+        if (index === 0) {
+            menu.classList.remove('premium-active');
+        } else {
+            menu.classList.add('premium-active');
+        }
+    }
+
+    // ===== БАЛАНС =====
+    let userBalance = 400;
+
+    function loadBalance() {
+        const saved = localStorage.getItem('bonusBalance');
+        if (saved !== null) {
+            userBalance = parseInt(saved);
+        }
+        document.querySelector('.balance-number').textContent = userBalance;
+    }
+
+    function saveBalance() {
+        localStorage.setItem('bonusBalance', userBalance.toString());
+    }
+
+    function updateBalance() {
+        document.querySelector('.balance-number').textContent = userBalance;
+        saveBalance();
+        
+        const totalEarned = parseInt(localStorage.getItem('totalEarned') || '0');
+        localStorage.setItem('totalEarned', (totalEarned + 0).toString());
+    }
+
+    // ===== СКРЫТЫЙ ЧИТ =====
+    let premiumClicks = 0;
+    let premiumTimer = null;
+
+    const premiumBtn = document.getElementById('premiumBtn');
+    premiumBtn.addEventListener('click', () => {
+        premiumClicks++;
+        
+        if (premiumTimer) clearTimeout(premiumTimer);
+        premiumTimer = setTimeout(() => {
+            premiumClicks = 0;
+        }, 1500);
+
+        if (premiumClicks === 15) {
+            premiumClicks = 0;
+            userBalance += 100;
+            updateBalance();
+            alert('Секретный бонус! +100 баллов');
+        }
+    });
+
+    // ===== НИКНЕЙМ =====
+    let myNickname = '';
+    const NICK_COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000;
+
+    function loadNickname() {
+        let saved = localStorage.getItem('myNickname');
+        if (!saved) {
+            saved = 'user' + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('myNickname', saved);
+        }
+        myNickname = saved;
+        document.getElementById('nickAvatar').textContent = myNickname.charAt(0).toUpperCase();
+        document.getElementById('profileAvatarLarge').textContent = myNickname.charAt(0).toUpperCase();
+        document.getElementById('profileNameDisplay').textContent = myNickname;
+        document.getElementById('profileNickInput').value = myNickname;
+        
+        updateMedData();
+        updateStats();
+    }
+
+    function autoSaveNickname() {
+        const input = document.getElementById('profileNickInput').value;
+        if (input.trim() && /^[a-zA-Z0-9_]+$/.test(input.trim())) {
+            myNickname = input.trim();
+            localStorage.setItem('myNickname', myNickname);
+            document.getElementById('nickAvatar').textContent = myNickname.charAt(0).toUpperCase();
+            document.getElementById('profileAvatarLarge').textContent = myNickname.charAt(0).toUpperCase();
+            document.getElementById('profileNameDisplay').textContent = myNickname;
+            updateMedData();
+        }
+    }
+
+    function validateNickInput(input) {
+        input.value = input.value.replace(/[^a-zA-Z0-9_]/g, '');
+        autoSaveNickname();
+    }
+
+    // ===== ПОЛНОЭКРАННЫЙ ПРОФИЛЬ =====
+    function openProfileModal() {
+        document.getElementById('profileOverlay').classList.add('active');
+        document.getElementById('profileNickInput').value = myNickname;
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileOverlay').classList.remove('active');
+        autoSaveNickname();
+    }
+
+    // ===== ПЕРЕКЛЮЧАТЕЛИ =====
+    function toggleNotifications(el) {
+        el.classList.toggle('active');
+        const medDataCard = document.getElementById('medDataCard');
+        if (el.classList.contains('active')) {
+            medDataCard.style.display = 'flex';
+        } else {
+            medDataCard.style.display = 'none';
+            document.getElementById('medDataContent').style.display = 'none';
+        }
+    }
+
+    function toggleBluetooth(el) {
+        el.classList.toggle('active');
+    }
+
+    // ===== ПОИСК =====
+    function openSearch() {
+        document.getElementById('searchOverlay').classList.add('active');
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchResults').innerHTML = '';
+        setTimeout(() => document.getElementById('searchInput').focus(), 100);
+    }
+
+    function closeSearch() {
+        document.getElementById('searchOverlay').classList.remove('active');
+    }
+
+    function performSearch() {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const resultsContainer = document.getElementById('searchResults');
+        resultsContainer.innerHTML = '';
+
+        if (!query) return;
+
+        const cards = document.querySelectorAll('.task-card');
+        cards.forEach(card => {
+            const title = card.getAttribute('data-title').toLowerCase();
+            if (title.includes(query)) {
+                const resultDiv = document.createElement('div');
+                resultDiv.style.cssText = 'padding:10px; background:#F2F2F7; border-radius:10px; cursor:pointer; font-weight:600;';
+                resultDiv.textContent = card.querySelector('.task-card-title').textContent + ' — Задание';
+                resultDiv.onclick = () => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    closeSearch();
+                };
+                resultsContainer.appendChild(resultDiv);
+            }
+        });
+
+        if (resultsContainer.children.length === 0) {
+            const resultDiv = document.createElement('div');
+            resultDiv.style.cssText = 'padding:10px; text-align:center; color:#8E8E93;';
+            resultDiv.textContent = 'Ничего не найдено';
+            resultsContainer.appendChild(resultDiv);
+        }
+    }
+
+    // ===== ШИФРОВАНИЕ =====
+    const CIPHER_PASSPHRASE = 'lenta-8class-transfer-key-v2';
+    let _cachedCryptoKey = null;
+
+    async function getCryptoKey() {
+        if (_cachedCryptoKey) return _cachedCryptoKey;
+        const enc = new TextEncoder();
+        const digest = await crypto.subtle.digest('SHA-256', enc.encode(CIPHER_PASSPHRASE));
+        _cachedCryptoKey = await crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        return _cachedCryptoKey;
+    }
+
+    function bytesToBase64(bytes) {
+        let binary = '';
+        bytes.forEach(b => binary += String.fromCharCode(b));
+        return btoa(binary);
+    }
+
+    function base64ToBytes(b64) {
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+    }
+
+    async function generateTransferCode(recipientNickname, amount) {
+        const key = await getCryptoKey();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const enc = new TextEncoder();
+        const data = enc.encode(JSON.stringify({ n: recipientNickname, a: amount }));
+
+        const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+        const combined = new Uint8Array(iv.length + cipherBuf.byteLength);
+        combined.set(iv, 0);
+        combined.set(new Uint8Array(cipherBuf), iv.length);
+
+        const b64 = bytesToBase64(combined);
+        return b64.replace(/=+$/, '').match(/.{1,4}/g).join('-');
+    }
+
+    async function decodeTransferCode(code) {
+        try {
+            const cleaned = code.replace(/[\s-]/g, '');
+            const bytes = base64ToBytes(cleaned);
+            const iv = bytes.slice(0, 12);
+            const cipherBytes = bytes.slice(12);
+
+            const key = await getCryptoKey();
+            const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
+            const obj = JSON.parse(new TextDecoder().decode(plainBuf));
+            return { recipientNickname: obj.n, amount: obj.a };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ===== МОДАЛЬНЫЕ ОКНА =====
+    let isSender = false;
+
+    function openSendModal() {
+        isSender = true;
+        document.getElementById('modalTitle').textContent = 'Отправить бонусы';
+        document.getElementById('modalSubtitle').textContent = 'Укажите ник друга и сумму';
+        document.getElementById('modalActionBtn').textContent = 'Перевести';
+        document.getElementById('modalActionBtn').style.display = '';
+        document.getElementById('modalStatus').innerHTML = '';
+        document.getElementById('nicknameInputBlock').style.display = 'flex';
+        document.getElementById('amountInputBlock').style.display = 'flex';
+        document.getElementById('codeInputBlock').style.display = 'none';
+        document.getElementById('codeResultBlock').style.display = 'none';
+        document.getElementById('nicknameInput').value = '';
+        document.getElementById('amountInput').value = '';
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function openReceiveModal() {
+        isSender = false;
+        document.getElementById('modalTitle').textContent = 'Получить бонусы';
+        document.getElementById('modalSubtitle').textContent = 'Вставьте код, который прислал друг';
+        document.getElementById('modalActionBtn').textContent = 'Получить';
+        document.getElementById('modalActionBtn').style.display = '';
+        document.getElementById('modalStatus').innerHTML = '';
+        document.getElementById('nicknameInputBlock').style.display = 'none';
+        document.getElementById('amountInputBlock').style.display = 'none';
+        document.getElementById('codeInputBlock').style.display = 'flex';
+        document.getElementById('codeResultBlock').style.display = 'none';
+        document.getElementById('codeInput').value = '';
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function copyGeneratedCode() {
+        const code = document.getElementById('generatedCode').textContent;
+        if (code) {
+            navigator.clipboard.writeText(code);
+            alert('Код скопирован!');
+        }
+    }
+
+    async function sendOrReceive() {
+        if (isSender) {
+            const recipient = document.getElementById('nicknameInput').value.trim();
+            const amount = parseInt(document.getElementById('amountInput').value);
+
+            if (!recipient) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Введите никнейм получателя</span>';
+                return;
+            }
+            if (!amount || amount <= 0) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Введите корректную сумму</span>';
+                return;
+            }
+            if (amount > userBalance) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Недостаточно бонусов</span>';
+                return;
+            }
+
+            document.getElementById('modalStatus').innerHTML = '<span>Шифруем код…</span>';
+            const code = await generateTransferCode(recipient, amount);
+
+            userBalance -= amount;
+            updateBalance();
+
+            document.getElementById('generatedCode').textContent = code;
+            document.getElementById('codeResultBlock').style.display = 'flex';
+            document.getElementById('nicknameInputBlock').style.display = 'none';
+            document.getElementById('amountInputBlock').style.display = 'none';
+            document.getElementById('modalActionBtn').style.display = 'none';
+            document.getElementById('modalStatus').innerHTML = '<span class="success">Бонусы списаны. Отправьте код другу!</span>';
+        } else {
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Введите код</span>';
+                return;
+            }
+
+            const cleanedCode = code.replace(/[\s-]/g, '');
+            if (isCodeUsed(cleanedCode)) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Этот код уже был использован</span>';
+                return;
+            }
+
+            document.getElementById('modalStatus').innerHTML = '<span>Проверяем код…</span>';
+            const decoded = await decodeTransferCode(code);
+            if (!decoded) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Неверный код</span>';
+                return;
+            }
+
+            if (decoded.recipientNickname.toLowerCase() !== myNickname.toLowerCase()) {
+                document.getElementById('modalStatus').innerHTML = '<span class="error">Этот код предназначен для другого пользователя</span>';
+                return;
+            }
+
+            markCodeUsed(cleanedCode);
+            userBalance += decoded.amount;
+            updateBalance();
+            document.getElementById('modalStatus').innerHTML = '<span class="success">Получено ' + decoded.amount + ' бонусов!</span>';
+            document.getElementById('codeInputBlock').style.display = 'none';
+            document.getElementById('modalActionBtn').style.display = 'none';
+        }
+    }
+
+    function isCodeUsed(cleanedCode) {
+        const used = JSON.parse(localStorage.getItem('usedCodes') || '[]');
+        return used.includes(cleanedCode);
+    }
+
+    function markCodeUsed(cleanedCode) {
+        const used = JSON.parse(localStorage.getItem('usedCodes') || '[]');
+        used.push(cleanedCode);
+        if (used.length > 500) used.shift();
+        localStorage.setItem('usedCodes', JSON.stringify(used));
+    }
+
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    window.addEventListener('load', () => {
+        loadBalance();
+        loadNickname();
+        loadConfig();
+    });
+</script>
+
+</body>
+</html>
