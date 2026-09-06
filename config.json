@@ -2,7 +2,7 @@
   "tasks": [
     {
       "id": 1,
-      "title": "Алгебра",
+      "title": "Алгебрааотим",
       "question": "Корни уравнения x² − 5x + 6 = 0?",
       "options": ["x = 2 и x = 3", "x = 1 и x = 6"],
       "correctIndex": 0,
