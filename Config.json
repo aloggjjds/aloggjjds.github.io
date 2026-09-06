@@ -1,0 +1,153 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Алгебра",
+      "icon": "📐",
+      "question": "Корни уравнения x² − 5x + 6 = 0?",
+      "options": ["x = 2 и x = 3", "x = 1 и x = 6"],
+      "correctIndex": 0,
+      "reward": 50,
+      "penalty": 15,
+      "priority": false
+    },
+    {
+      "id": 2,
+      "title": "Геометрия",
+      "icon": "📏",
+      "question": "Катеты 3 и 4. Чему равна гипотенуза?",
+      "options": ["5", "6"],
+      "correctIndex": 0,
+      "reward": 50,
+      "penalty": 15,
+      "priority": false
+    },
+    {
+      "id": 3,
+      "title": "Физика",
+      "icon": "⚡",
+      "question": "U = 12В, R = 4 Ом. Чему равна сила тока?",
+      "options": ["3 А", "48 А"],
+      "correctIndex": 0,
+      "reward": 70,
+      "penalty": 20,
+      "priority": true
+    },
+    {
+      "id": 4,
+      "title": "Химия",
+      "icon": "🧪",
+      "question": "Сколько атомов кислорода в молекуле H₂O?",
+      "options": ["1", "2"],
+      "correctIndex": 0,
+      "reward": 70,
+      "penalty": 20,
+      "priority": false
+    },
+    {
+      "id": 5,
+      "title": "Русский язык",
+      "icon": "📖",
+      "question": "Какой частью речи является «быстро» в предложении?",
+      "options": ["Наречие", "Прилагательное"],
+      "correctIndex": 0,
+      "reward": 40,
+      "penalty": 10,
+      "priority": false
+    },
+    {
+      "id": 6,
+      "title": "География",
+      "icon": "🌍",
+      "question": "Какой климатический пояс преобладает в средней полосе России?",
+      "options": ["Умеренный", "Тропический"],
+      "correctIndex": 0,
+      "reward": 40,
+      "penalty": 10,
+      "priority": false
+    },
+    {
+      "id": 7,
+      "title": "Биология",
+      "icon": "🧬",
+      "question": "Сколько камер в сердце человека?",
+      "options": ["4", "3"],
+      "correctIndex": 0,
+      "reward": 60,
+      "penalty": 15,
+      "priority": false
+    },
+    {
+      "id": 8,
+      "title": "История",
+      "icon": "🏛️",
+      "question": "В каком веке произошла Северная война?",
+      "options": ["XVIII век", "XVI век"],
+      "correctIndex": 0,
+      "reward": 50,
+      "penalty": 15,
+      "priority": false
+    },
+    {
+      "id": 9,
+      "title": "Английский язык",
+      "icon": "🇬🇧",
+      "question": "«I ___ finished my homework already.»",
+      "options": ["have", "has"],
+      "correctIndex": 0,
+      "reward": 40,
+      "penalty": 10,
+      "priority": false
+    },
+    {
+      "id": 10,
+      "title": "Информатика",
+      "icon": "💻",
+      "question": "Число 45 в двоичной системе счисления?",
+      "options": ["101101", "110101"],
+      "correctIndex": 0,
+      "reward": 60,
+      "penalty": 15,
+      "priority": false
+    },
+    {
+      "id": 11,
+      "title": "Литература",
+      "icon": "📚",
+      "question": "Кто автор романа «Герой нашего времени»?",
+      "options": ["М.Ю. Лермонтов", "А.С. Пушкин"],
+      "correctIndex": 0,
+      "reward": 40,
+      "penalty": 10,
+      "priority": false
+    },
+    {
+      "id": 12,
+      "title": "Обществознание",
+      "icon": "⚖️",
+      "question": "Что является основным законом государства?",
+      "options": ["Конституция", "Указ президента"],
+      "correctIndex": 0,
+      "reward": 50,
+      "penalty": 15,
+      "priority": false
+    }
+  ],
+  "medData": {
+    "emoji": "💚",
+    "color": "#E8F8EC",
+    "message": "Ваши показатели в норме",
+    "personalMessages": {
+      "crazy65": {
+        "emoji": "🌈",
+        "color": "#EEEDFF",
+        "message": "Особое сообщение для crazy65!"
+      },
+      "user1234": {
+        "emoji": "⭐",
+        "color": "#FFF5E6",
+        "message": "Это тестовое сообщение для user1234"
+      }
+    }
+  }
+}
