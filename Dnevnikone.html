@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Расписание</title>
+<style>
+  * {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #f2f2f7;
+    color: #000;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f2f2f7;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ---------- Верхняя навигация ---------- */
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    flex-shrink: 0;
+    z-index: 3;
+  }
+
+  .circle-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.03);
+    transition: transform .18s cubic-bezier(.22,.9,.3,1), background .18s;
+    color: #0a84ff;
+  }
+
+  .circle-btn:active {
+    transform: scale(0.92);
+    background: rgba(240,240,245,0.9);
+  }
+
+  .circle-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ---------- Заголовок ---------- */
+  .title-block {
+    padding: 2px 26px 8px;
+    flex-shrink: 0;
+    z-index: 3;
+  }
+
+  .title {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -1.4px;
+    line-height: 1.05;
+    color: #000;
+    transition: opacity .25s ease;
+  }
+
+  .subtitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14.5px;
+    color: #8e8e93;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  .subtitle .accent {
+    color: #ff9500;
+    font-weight: 600;
+  }
+
+  /* ---------- Дата ---------- */
+  .section-title {
+    padding: 10px 26px 10px;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: #000;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    z-index: 3;
+  }
+
+  .section-title .counter {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8e8e93;
+  }
+
+  /* ---------- Слайдер ---------- */
+  .slider-viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    touch-action: pan-y;
+  }
+
+  .slider-track {
+    display: flex;
+    height: 100%;
+    will-change: transform;
+    transition: transform .38s cubic-bezier(.25,1,.3,1);
+  }
+
+  .slider-track.dragging {
+    transition: none;
+  }
+
+  .slide {
+    min-width: 100%;
+    width: 100%;
+    height: 100%;
+    padding: 0 18px 130px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .slide::-webkit-scrollbar { display: none; }
+
+  /* ---------- Карточка ---------- */
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 0 0 0.5px rgba(0,0,0,0.02);
+  }
+
+  .lesson {
+    padding: 15px 18px;
+    border-bottom: 1px solid #f0f0f3;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: background .25s ease;
+    position: relative;
+  }
+
+  .lesson:last-child { border-bottom: none; }
+
+  .lesson.past .lesson-title,
+  .lesson.past .lesson-sub,
+  .lesson.past .lesson-time {
+    color: #c7c7cc;
+  }
+
+  .lesson.past .lesson-sub svg { color: #d8d8dc; }
+
+  .lesson.now {
+    background: linear-gradient(90deg, rgba(10,132,255,0.09), rgba(10,132,255,0.015) 70%);
+  }
+
+  .lesson.now::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: #0a84ff;
+    border-radius: 0 3px 3px 0;
+  }
+
+  .lesson-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lesson-title {
+    font-size: 16.5px;
+    font-weight: 600;
+    color: #000;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lesson-sub {
+    font-size: 13.5px;
+    color: #8e8e93;
+    font-weight: 400;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .lesson-sub .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .lesson-sub .meta svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    color: #a0a0a8;
+  }
+
+  .lesson-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #0a84ff;
+    background: rgba(10,132,255,0.13);
+    padding: 3px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .lesson-badge::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #0a84ff;
+    box-shadow: 0 0 0 0 rgba(10,132,255,0.7);
+    animation: dot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .7; }
+  }
+
+  @keyframes dot-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(10,132,255,0.6); }
+    70% { box-shadow: 0 0 0 6px rgba(10,132,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(10,132,255,0); }
+  }
+
+  .lesson-time {
+    font-size: 13px;
+    color: #8e8e93;
+    font-weight: 500;
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
+  }
+
+  .lesson-time .end {
+    color: #c7c7cc;
+    font-weight: 400;
+  }
+
+  .lesson.now .lesson-time {
+    color: #0a84ff;
+    font-weight: 700;
+  }
+
+  /* Индикатор прогресса урока */
+  .progress-track {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: rgba(10,132,255,0.1);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #0a84ff;
+    transition: width 1s linear;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Пустой день */
+  .empty {
+    text-align: center;
+    padding: 70px 20px;
+    color: #8e8e93;
+    font-size: 14.5px;
+  }
+
+  .empty svg {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 14px;
+    opacity: .45;
+    color: #8e8e93;
+  }
+
+  /* ---------- Точки-индикаторы ---------- */
+  .dots {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.14);
+    transition: all .3s cubic-bezier(.25,1,.3,1);
+  }
+
+  .dot.active {
+    background: #0a84ff;
+    height: 18px;
+    border-radius: 4px;
+  }
+
+  /* ---------- Нижняя панель ---------- */
+  .bottom-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 14px 18px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(242,242,247,0) 0%, rgba(242,242,247,0.9) 35%, #f2f2f7 100%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .bottom-bar > * { pointer-events: auto; }
+
+  .search {
+    flex: 1;
+    height: 42px;
+    background: #fff;
+    border-radius: 21px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 9px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.03);
+    color: #8e8e93;
+  }
+
+  .search svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    color: #8e8e93;
+  }
+
+  .search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    color: #000;
+    font-family: inherit;
+    min-width: 0;
+  }
+
+  .search input::placeholder {
+    color: #8e8e93;
+  }
+
+  .search .mic {
+    display: flex;
+    align-items: center;
+    color: #8e8e93;
+    cursor: pointer;
+  }
+
+  .search .mic svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .compose-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.03);
+    color: #0a84ff;
+    transition: transform .18s cubic-bezier(.22,.9,.3,1), background .18s;
+    flex-shrink: 0;
+  }
+
+  .compose-btn:active {
+    transform: scale(0.92);
+    background: #f0f0f5;
+  }
+
+  .compose-btn svg {
+    width: 19px;
+    height: 19px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Верхняя навигация -->
+  <div class="top-nav">
+    <button class="circle-btn" aria-label="Назад">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <button class="circle-btn" aria-label="Ещё" style="color:#000;">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="5" cy="12" r="1.9"></circle>
+        <circle cx="12" cy="12" r="1.9"></circle>
+        <circle cx="19" cy="12" r="1.9"></circle>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Заголовок -->
+  <div class="title-block">
+    <div class="title" id="titleDay">Понедельник</div>
+    <div class="subtitle" id="subtitleDate">
+      <span id="subtitleLabel">Сегодня</span>
+      <span style="color:#c7c7cc;">·</span>
+      <span id="dateFull"></span>
+    </div>
+  </div>
+
+  <!-- Заголовок секции -->
+  <div class="section-title">
+    <span id="sectionDay">Сегодня</span>
+    <span class="counter" id="lessonCounter">0 уроков</span>
+  </div>
+
+  <!-- Слайдер -->
+  <div class="slider-viewport" id="viewport">
+    <div class="slider-track" id="track"></div>
+  </div>
+
+  <!-- Точки -->
+  <div class="dots" id="dots"></div>
+
+  <!-- Нижняя панель -->
+  <div class="bottom-bar">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" placeholder="Поиск" id="searchInput">
+      <div class="mic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+          <path d="M5 10v2a7 7 0 0 0 14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+      </div>
+    </div>
+    <button class="compose-btn" aria-label="Создать">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ====== SVG-иконки ======
+  const ICONS = {
+    person: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    door: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.562Z"/></svg>`,
+    clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`,
+    sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`
+  };
+
+  // ====== РАСПИСАНИЕ ======
+  const schedule = {
+    "Понедельник": [
+      { start: "08:30", end: "09:10", subject: "Разговоры о важном", teacher: "Климова Л.Н.", room: "Б-26" },
+      { start: "09:30", end: "10:10", subject: "Труд (технология)", teacher: "Лобанов Р.Н. / Хатунцев", room: "Г-36 / Г-31" },
+      { start: "10:30", end: "11:10", subject: "Английский язык", teacher: "Кильдичева Л.А. / Мезенцева Ю.В.", room: "А-220 / А-421" },
+      { start: "11:30", end: "12:10", subject: "История", teacher: "Гриднева О.В.", room: "Б-18" },
+      { start: "12:20", end: "13:00", subject: "ОБЗР", teacher: "Иваненко Е.М.", room: "А-422" },
+      { start: "13:10", end: "13:50", subject: "Алгебра", teacher: "Мешкова А.В.", room: "В-46" },
+      { start: "14:00", end: "14:40", subject: "Алгебра", teacher: "Мешкова А.В.", room: "В-46" }
+    ],
+    "Вторник": [
+      { start: "08:30", end: "09:10", subject: "География", teacher: "Климова Л.Н.", room: "Б-26" },
+      { start: "09:30", end: "10:10", subject: "История", teacher: "Гриднева О.В.", room: "Б-18" },
+      { start: "10:30", end: "11:10", subject: "Музыка", teacher: "Лисненко Д.В.", room: "Е-213" },
+      { start: "11:30", end: "12:10", subject: "Вероятность и статистика", teacher: "Мешкова А.В.", room: "В-46" },
+      { start: "12:20", end: "13:00", subject: "Биология", teacher: "Рудь Н.А.", room: "В-27" },
+      { start: "13:10", end: "13:50", subject: "Курсы по выбору 2", teacher: "Ким Н.М. / Мешкова А.В. / Рудь Н.А.", room: "В-48 / В-46 / В-27" },
+      { start: "14:00", end: "14:40", subject: "Физическая культура", teacher: "Качуренко Д.Ю.", room: "Спортзал" }
+    ],
+    "Среда": [
+      { start: "08:30", end: "09:10", subject: "Физика", teacher: "Сибирко П.В.", room: "В-36" },
+      { start: "09:30", end: "10:10", subject: "Геометрия", teacher: "Мешкова А.В.", room: "В-46" },
+      { start: "10:30", end: "11:10", subject: "Химия", teacher: "Исманская Т.А.", room: "А-413" },
+      { start: "11:30", end: "12:10", subject: "Информатика", teacher: "Уфимский Н.Р. / Талипова В.К.", room: "Г-38 / Г-33" },
+      { start: "12:20", end: "13:00", subject: "Русский язык", teacher: "Ухлинова Е.Н.", room: "Б-35" },
+      { start: "13:10", end: "13:50", subject: "Литература", teacher: "Ухлинова Е.Н.", room: "Б-35" },
+      { start: "14:00", end: "14:40", subject: "Физическая культура", teacher: "Качуренко Д.Ю.", room: "Спортзал" }
+    ],
+    "Четверг": [
+      { start: "08:30", end: "09:10", subject: "Химия", teacher: "Исманская Т.А.", room: "А-413" },
+      { start: "09:30", end: "10:10", subject: "Английский язык", teacher: "Кильдичева Л.А. / Мезенцева Ю.В.", room: "А-220 / А-421" },
+      { start: "10:30", end: "11:10", subject: "Биология", teacher: "Рудь Н.А.", room: "В-27" },
+      { start: "11:30", end: "12:10", subject: "Алгебра", teacher: "Мешкова А.В.", room: "В-46" },
+      { start: "12:20", end: "13:00", subject: "Русский язык", teacher: "Ухлинова Е.Н.", room: "Б-35" },
+      { start: "13:10", end: "13:50", subject: "Курсы по выбору 1", teacher: "Ухлинова Е.Н. / Блинова Л.П. / Климова Л.Н. / Талипова В.К. / Голубых Н.В.", room: "Б-35 / А-423 / Б-26 / Г-33 / В-35" },
+      { start: "14:00", end: "14:40", subject: "История", teacher: "Гриднева О.В.", room: "Б-18" }
+    ],
+    "Пятница": [
+      { start: "08:30", end: "09:10", subject: "Геометрия", teacher: "Мешкова А.В.", room: "В-46" },
+      { start: "09:30", end: "10:10", subject: "География", teacher: "Климова Л.Н.", room: "Б-26" },
+      { start: "10:30", end: "11:10", subject: "Физика", teacher: "Сибирко П.В.", room: "В-36" },
+      { start: "11:30", end: "12:10", subject: "Русский язык", teacher: "Ухлинова Е.Н.", room: "Б-35" },
+      { start: "12:20", end: "13:00", subject: "Английский язык", teacher: "Кильдичева Л.А. / Мезенцева Ю.В.", room: "А-220 / А-421" },
+      { start: "13:10", end: "13:50", subject: "Литература", teacher: "Ухлинова Е.Н.", room: "Б-35" }
+    ]
+  };
+
+  const days = Object.keys(schedule);
+  const dayIndexMap = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4 };
+
+  const viewport = document.getElementById('viewport');
+  const track = document.getElementById('track');
+  const dotsEl = document.getElementById('dots');
+  const titleDay = document.getElementById('titleDay');
+  const subtitleLabel = document.getElementById('subtitleLabel');
+  const dateFull = document.getElementById('dateFull');
+  const sectionDay = document.getElementById('sectionDay');
+  const lessonCounter = document.getElementById('lessonCounter');
+
+  // ====== Утилиты ======
+  function todayIndex() {
+    const jsDay = new Date().getDay();
+    if (jsDay >= 1 && jsDay <= 5) return dayIndexMap[jsDay];
+    return 0;
+  }
+
+  function formatDate() {
+    const d = new Date();
+    const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+  }
+
+  function nowMinutes() {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+
+  function toMin(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function pluralLessons(n) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return 'урок';
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'урока';
+    return 'уроков';
+  }
+
+  // ====== Построение слайдов ======
+  function buildSlides() {
+    track.innerHTML = '';
+    dotsEl.innerHTML = '';
+
+    days.forEach((day, idx) => {
+      const slide = document.createElement('div');
+      slide.className = 'slide';
+      slide.dataset.day = day;
+
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const lessons = schedule[day];
+      if (!lessons.length) {
+        card.innerHTML = `<div class="empty">${ICONS.sun}<div>Сегодня уроков нет</div></div>`;
+      } else {
+        lessons.forEach((lesson) => {
+          const el = document.createElement('div');
+          el.className = 'lesson';
+          el.dataset.start = lesson.start;
+          el.dataset.end = lesson.end;
+
+          el.innerHTML = `
+            <div class="lesson-content">
+              <div class="lesson-title">${lesson.subject}</div>
+              <div class="lesson-sub">
+                <span class="meta">${ICONS.person}${lesson.teacher}</span>
+                <span class="meta">${ICONS.door}${lesson.room}</span>
+              </div>
+            </div>
+            <div class="lesson-time">${lesson.start}<span class="end"> – ${lesson.end}</span></div>
+          `;
+          card.appendChild(el);
+        });
+      }
+
+      slide.appendChild(card);
+      track.appendChild(slide);
+
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dotsEl.appendChild(dot);
+    });
+  }
+
+  // ====== Кастомный свайп (плавный, как в iOS) ======
+  let currentIndex = todayIndex();
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let axisLocked = null; // 'x' | 'y' | null
+  let trackWidth = 0;
+  let animationId = null;
+
+  function setTranslate(px, animate = true) {
+    if (animate) {
+      track.classList.remove('dragging');
+    } else {
+      track.classList.add('dragging');
+    }
+    track.style.transform = `translate3d(${px}px, 0, 0)`;
+  }
+
+  function snapTo(idx, animate = true) {
+    currentIndex = Math.max(0, Math.min(days.length - 1, idx));
+    trackWidth = viewport.clientWidth;
+    setTranslate(-currentIndex * trackWidth, animate);
+    updateHeader(currentIndex);
+    updateDots(currentIndex);
+    updateLessonsState();
+  }
+
+  function updateDots(active) {
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === active);
+    });
+  }
+
+  function updateHeader(idx) {
+    const day = days[idx];
+    const isToday = idx === todayIndex();
+    titleDay.textContent = day;
+    sectionDay.textContent = isToday ? 'Сегодня' : day;
+    subtitleLabel.textContent = isToday ? 'Сегодня' : 'Расписание';
+    dateFull.textContent = formatDate();
+    const lessons = schedule[day];
+    lessonCounter.textContent = `${lessons.length} ${pluralLessons(lessons.length)}`;
+  }
+
+  // Начало касания
+  viewport.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    isDragging = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    deltaX = 0;
+    axisLocked = null;
+    trackWidth = viewport.clientWidth;
+    track.classList.add('dragging');
+  }, { passive: true });
+
+  // Движение
+  viewport.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - startX;
+    const dy = y - startY;
+
+    // Определяем ось один раз
+    if (!axisLocked) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+    }
+
+    if (axisLocked === 'y') {
+      return; // пусть скроллит вертикально
+    }
+
+    if (axisLocked === 'x') {
+      e.preventDefault();
+      deltaX = dx;
+
+      // Сопротивление на краях
+      const base = -currentIndex * trackWidth;
+      let next = base + dx;
+      const min = -(days.length - 1) * trackWidth;
+      const max = 0;
+      if (next > max) next = max + (next - max) * 0.35;
+      if (next < min) next = min + (next - min) * 0.35;
+
+      track.style.transform = `translate3d(${next}px, 0, 0)`;
+    }
+  }, { passive: false });
+
+  // Конец касания
+  function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if (axisLocked === 'x') {
+      const threshold = trackWidth * 0.22;
+      const velocity = deltaX;
+      let target = currentIndex;
+
+      if (velocity < -threshold) target = currentIndex + 1;
+      else if (velocity > threshold) target = currentIndex - 1;
+
+      snapTo(target, true);
+    } else {
+      // если не свайп — вернуть на место
+      snapTo(currentIndex, true);
+    }
+
+    axisLocked = null;
+    deltaX = 0;
+  }
+
+  viewport.addEventListener('touchend', endDrag, { passive: true });
+  viewport.addEventListener('touchcancel', endDrag, { passive: true });
+
+  // ====== Мышь (для десктопа) ======
+  viewport.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    deltaX = 0;
+    axisLocked = 'x';
+    trackWidth = viewport.clientWidth;
+    track.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging || axisLocked !== 'x') return;
+    deltaX = e.clientX - startX;
+    const base = -currentIndex * trackWidth;
+    let next = base + deltaX;
+    const min = -(days.length - 1) * trackWidth;
+    const max = 0;
+    if (next > max) next = max + (next - max) * 0.35;
+    if (next < min) next = min + (next - min) * 0.35;
+    track.style.transform = `translate3d(${next}px, 0, 0)`;
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    const threshold = trackWidth * 0.22;
+    let target = currentIndex;
+    if (deltaX < -threshold) target = currentIndex + 1;
+    else if (deltaX > threshold) target = currentIndex - 1;
+    snapTo(target, true);
+    isDragging = false;
+    axisLocked = null;
+    deltaX = 0;
+  });
+
+  // ====== Подсветка текущего / прошедшего урока ======
+  function updateLessonsState() {
+    const now = nowMinutes();
+    const todayIdx = todayIndex();
+
+    track.querySelectorAll('.slide').forEach((slide, sIdx) => {
+      const isToday = sIdx === todayIdx;
+      slide.querySelectorAll('.lesson').forEach(el => {
+        el.classList.remove('now', 'past');
+        const oldProgress = el.querySelector('.progress-track');
+        if (oldProgress) oldProgress.remove();
+
+        if (!isToday) return;
+
+        const start = toMin(el.dataset.start);
+        const end = toMin(el.dataset.end);
+
+        if (now >= start && now < end) {
+          el.classList.add('now');
+          const total = end - start;
+          const passed = now - start;
+          const percent = Math.min(100, Math.max(0, (passed / total) * 100));
+
+          const track_el = document.createElement('div');
+          track_el.className = 'progress-track';
+          track_el.innerHTML = `<div class="progress-fill" style="width:${percent}%"></div>`;
+          el.appendChild(track_el);
+        } else if (now >= end) {
+          el.classList.add('past');
+        }
+      });
+    });
+  }
+
+  // ====== Инициализация ======
+  buildSlides();
+  requestAnimationFrame(() => {
+    trackWidth = viewport.clientWidth;
+    setTranslate(-currentIndex * trackWidth, false);
+    updateHeader(currentIndex);
+    updateDots(currentIndex);
+    updateLessonsState();
+  });
+
+  // Автообновление
+  setInterval(updateLessonsState, 30000);
+
+  // Ресайз
+  window.addEventListener('resize', () => {
+    trackWidth = viewport.clientWidth;
+    setTranslate(-currentIndex * trackWidth, false);
+  });
+
+  // Поиск
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    track.querySelectorAll('.lesson').forEach(el => {
+      const text = el.textContent.toLowerCase();
+      el.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>
