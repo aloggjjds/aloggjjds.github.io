@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>МегаДневник</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://js.puter.com/v2/"></script>
 <style>
   * {
     margin: 0; padding: 0; box-sizing: border-box;
@@ -430,7 +431,7 @@
   }
 
   /* ==================================================================
-     НИЖНЕЕ МЕНЮ — LIQUID GLASS
+     НИЖНЕЕ МЕНЮ
      ================================================================== */
   .bottom-dock-wrap {
     position: absolute;
@@ -674,21 +675,74 @@
     height: 52px;
     border-radius: 16px;
     border: none;
-    background: linear-gradient(135deg, #8e8e93, #6d6d72);
+    background: linear-gradient(135deg, #0a84ff, #0066cc);
     color: #fff;
     font-size: 16px;
     font-weight: 700;
-    cursor: not-allowed;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     margin-bottom: 14px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 16px rgba(10,132,255,0.3);
     letter-spacing: -0.2px;
+    transition: transform .15s, opacity .15s;
+  }
+  .check-btn:active { transform: scale(0.97); opacity: 0.85; }
+  .check-btn:disabled {
+    background: linear-gradient(135deg, #8e8e93, #6d6d72);
+    cursor: not-allowed;
     opacity: 0.75;
+    box-shadow: none;
   }
   .check-btn svg { width: 20px; height: 20px; }
+
+  /* ---------- Результат проверки ---------- */
+  .check-result {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 0 0 0.5px rgba(0,0,0,0.02);
+    margin-bottom: 14px;
+    display: none;
+  }
+  .check-result.visible { display: block; }
+  .check-result .label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .check-result .label svg { width: 13px; height: 13px; color: #0a84ff; }
+  .check-result .result-text {
+    font-size: 15px;
+    color: #1c1c1e;
+    line-height: 1.55;
+    font-weight: 500;
+    white-space: pre-wrap;
+  }
+  .check-result .result-time {
+    font-size: 11px;
+    color: #8e8e93;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  .loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ---------- Вкладки контента ---------- */
   .tab-content {
@@ -1721,7 +1775,9 @@
     chart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     hide: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
     edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
-    lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+    lock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
   };
 
   const SUBJECT_ICONS = {
@@ -2109,7 +2165,7 @@
     }
   }
 
-  // ============ ЗАГРУЗКА ДОМАШКИ ИЗ homework.json ============
+  // ============ ЗАГРУЗКА ДОМАШКИ ============
   let homeworkCache = null;
 
   async function getHomework(subject) {
@@ -2129,11 +2185,37 @@
     return key ? homeworkCache[key] : null;
   }
 
+  // ============ ПРОВЕРКА ДОМАШКИ ЧЕРЕЗ PUTER.JS ============
+  async function checkHomework(subject, homeworkText) {
+    const cacheKey = `megadiary_check_${subject}_${homeworkText.slice(0, 50)}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
+
+    const prompt = `Ты — учитель. Проверь домашнее задание по предмету "${subject}" для ученика 8 класса российской школы. Задание: "${homeworkText}". Используй знания из стандартных учебников для 8 класса (алгебра — Макарычев, геометрия — Атанасян, физика — Перышкин, русский — Ладыженская, химия — Рудзитис, история — Юдовская, биология — Пасечник). Реши задание полностью, объясни каждый шаг, дай правильные ответы. Если задание предполагает чтение параграфа — кратко перескажи основное содержание. Если нужно решить номера — реши их с решением. Отвечай на русском языке, структурированно.`;
+
+    try {
+      const response = await puter.ai.chat(prompt, {
+        model: 'openai/gpt-5.5'
+      });
+      const text = typeof response === 'string' ? response : (response.message?.content || response.text || JSON.stringify(response));
+      const result = {
+        text: text,
+        time: new Date().toLocaleString('ru-RU')
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(result));
+      return result;
+    } catch (err) {
+      console.error('Puter.js error:', err);
+      return {
+        text: 'Ошибка проверки: ' + (err.message || 'не удалось подключиться к ИИ') + '. Попробуйте ещё раз.',
+        time: new Date().toLocaleString('ru-RU')
+      };
+    }
+  }
+
   async function openLessonModal(day, index) {
     const lesson = schedule[day][index];
     if (!lesson) return;
-
-    const checkBtn = `<button class="check-btn" disabled>${ICONS.lock} Проверка временно недоступна</button>`;
 
     document.getElementById('modalBody').innerHTML = `
       <div class="modal-hero">
@@ -2154,21 +2236,78 @@
         <div class="label">${ICONS.homework} Домашнее задание</div>
         <div id="hwContent"><div class="hw-text soon">${HW_PLACEHOLDER}</div></div>
       </div>
-      ${checkBtn}
+      <button class="check-btn" id="checkBtn" onclick="onCheckClick()">
+        ${ICONS.search} Проверить домашнее задание
+      </button>
+      <div class="check-result" id="checkResult">
+        <div class="label">${ICONS.check} Результат проверки</div>
+        <div class="result-text" id="resultText"></div>
+        <div class="result-time" id="resultTime"></div>
+      </div>
     `;
     document.getElementById('modalOverlay').classList.add('active');
     document.getElementById('modalSheet').classList.add('active');
+
+    // Сохраняем текущий урок глобально для кнопки проверки
+    window._currentLesson = lesson;
 
     const hw = await getHomework(lesson.subject);
     const hwEl = document.getElementById('hwContent');
     if (hwEl && hw) {
       hwEl.innerHTML = `<div class="hw-text">${hw}</div>`;
+      window._currentHomework = hw;
+    } else {
+      window._currentHomework = HW_PLACEHOLDER;
+    }
+
+    // Проверяем, есть ли уже сохранённый результат
+    const cacheKey = `megadiary_check_${lesson.subject}_${(window._currentHomework || '').slice(0, 50)}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const data = JSON.parse(cached);
+      const resultEl = document.getElementById('checkResult');
+      const textEl = document.getElementById('resultText');
+      const timeEl = document.getElementById('resultTime');
+      if (resultEl && textEl && timeEl) {
+        textEl.textContent = data.text;
+        timeEl.textContent = 'Проверено: ' + data.time;
+        resultEl.classList.add('visible');
+      }
+    }
+  }
+
+  async function onCheckClick() {
+    const lesson = window._currentLesson;
+    const hw = window._currentHomework;
+    if (!lesson || !hw) return;
+
+    const btn = document.getElementById('checkBtn');
+    const resultEl = document.getElementById('checkResult');
+    const textEl = document.getElementById('resultText');
+    const timeEl = document.getElementById('resultTime');
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-spinner"></div> Проверяем…';
+
+    try {
+      const result = await checkHomework(lesson.subject, hw);
+      textEl.textContent = result.text;
+      timeEl.textContent = 'Проверено: ' + result.time;
+      resultEl.classList.add('visible');
+    } catch (e) {
+      textEl.textContent = 'Ошибка: ' + e.message;
+      resultEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = ICONS.search + ' Проверить домашнее задание';
     }
   }
 
   function closeLessonModal() {
     document.getElementById('modalOverlay').classList.remove('active');
     document.getElementById('modalSheet').classList.remove('active');
+    window._currentLesson = null;
+    window._currentHomework = null;
   }
 
   function renderGrades() {
