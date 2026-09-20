@@ -92,7 +92,7 @@
   .top-nav > * { pointer-events: auto; }
   .nav-right { display: flex; gap: 10px; }
 
-  /* ---------- Компактная шапка (без даты) ---------- */
+  /* ---------- Компактная шапка ---------- */
   .compact-header {
     padding: 0 22px 6px;
     flex-shrink: 0;
@@ -430,7 +430,7 @@
   }
 
   /* ==================================================================
-     НИЖНЕЕ МЕНЮ — LIQUID GLASS В СТИЛЕ APPLE
+     НИЖНЕЕ МЕНЮ — LIQUID GLASS
      ================================================================== */
   .bottom-dock-wrap {
     position: absolute;
@@ -484,7 +484,6 @@
     z-index: 2;
   }
 
-  /* Капля — простая серая полупрозрачная, без прибомбасов */
   .dock-pill {
     position: absolute;
     top: 6px;
@@ -669,7 +668,7 @@
     font-weight: 500;
   }
 
-  /* ---------- Кнопка "Проверка" (запрещена) ---------- */
+  /* ---------- Кнопка "Проверка" ---------- */
   .check-btn {
     width: 100%;
     height: 52px;
@@ -797,7 +796,7 @@
     max-width: 280px;
   }
 
-  /* ---------- Про (скрыто в коде, но присутствует) ---------- */
+  /* ---------- Про ---------- */
   .pro-hidden-content { display: none; }
 
   .profile-card {
@@ -1057,7 +1056,7 @@
   .shop-card.c-green { background: linear-gradient(135deg, #34c759, #28a745); }
   .shop-card.c-orange { background: linear-gradient(135deg, #ff9500, #e08600); }
 
-  /* ---------- Liquid Glass-меню ---------- */
+  /* ---------- Контекстное меню ---------- */
   .ctx-menu {
     position: fixed;
     z-index: 200;
@@ -1192,13 +1191,6 @@
   }
   .welcome-btn.secondary:active { background: #e5e5ea; }
 
-  .welcome-note {
-    text-align: center;
-    font-size: 13px;
-    color: #8e8e93;
-    margin-top: 16px;
-    line-height: 1.4;
-  }
   .welcome-disclaimer {
     font-size: 12px;
     color: #8e8e93;
@@ -1355,7 +1347,7 @@
     </div>
   </div>
 
-  <!-- Компактная шапка (только таймер, без даты) -->
+  <!-- Компактная шапка -->
   <div class="compact-header">
     <div class="timer-widget hidden" id="timerWidget">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2117,14 +2109,31 @@
     }
   }
 
-  function openLessonModal(day, index) {
+  // ============ ЗАГРУЗКА ДОМАШКИ ИЗ homework.json ============
+  let homeworkCache = null;
+
+  async function getHomework(subject) {
+    if (homeworkCache === null) {
+      try {
+        const res = await fetch('homework.json?v=' + Date.now());
+        homeworkCache = await res.json();
+      } catch (e) {
+        homeworkCache = {};
+      }
+    }
+    if (homeworkCache[subject]) return homeworkCache[subject];
+    const key = Object.keys(homeworkCache).find(k =>
+      k.toLowerCase().includes(subject.toLowerCase()) ||
+      subject.toLowerCase().includes(k.toLowerCase())
+    );
+    return key ? homeworkCache[key] : null;
+  }
+
+  async function openLessonModal(day, index) {
     const lesson = schedule[day][index];
     if (!lesson) return;
 
     const checkBtn = `<button class="check-btn" disabled>${ICONS.lock} Проверка временно недоступна</button>`;
-
-    // Везде одинаковый плейсхолдер ДЗ
-    const hwHtml = `<div class="hw-text soon">${HW_PLACEHOLDER}</div>`;
 
     document.getElementById('modalBody').innerHTML = `
       <div class="modal-hero">
@@ -2143,13 +2152,20 @@
       </div>
       <div class="homework-card">
         <div class="label">${ICONS.homework} Домашнее задание</div>
-        ${hwHtml}
+        <div id="hwContent"><div class="hw-text soon">${HW_PLACEHOLDER}</div></div>
       </div>
       ${checkBtn}
     `;
     document.getElementById('modalOverlay').classList.add('active');
     document.getElementById('modalSheet').classList.add('active');
+
+    const hw = await getHomework(lesson.subject);
+    const hwEl = document.getElementById('hwContent');
+    if (hwEl && hw) {
+      hwEl.innerHTML = `<div class="hw-text">${hw}</div>`;
+    }
   }
+
   function closeLessonModal() {
     document.getElementById('modalOverlay').classList.remove('active');
     document.getElementById('modalSheet').classList.remove('active');
@@ -2302,7 +2318,6 @@
         </div>
       `;
     }).join('');
-    // Заголовок без среднего балла
     wrap.innerHTML = `
       <div class="grades-table-header">
         <h3>Все оценки</h3>
@@ -2353,7 +2368,7 @@
     closeAddGrade();
   }
 
-  // ====== OCR распознавание оценок (переработано) ======
+  // ====== OCR распознавание оценок ======
   const SUBJECT_KEYWORDS = {
     'Алгебра': ['алгебр', 'algebra', 'алг.'],
     'Геометрия': ['геометр', 'geometry', 'геом.'],
@@ -2399,7 +2414,6 @@
     'пересказ': 'ПЕРЕСК',
   };
 
-  // Предобработка изображения для улучшения OCR
   function preprocessImage(file) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -2415,8 +2429,6 @@
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          // Grayscale + усиление контраста
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageData.data;
           const contrast = 1.4;
@@ -2428,7 +2440,6 @@
             data[i] = data[i+1] = data[i+2] = v;
           }
           ctx.putImageData(imageData, 0, 0);
-
           canvas.toBlob(blob => resolve(blob || file), 'image/png', 0.95);
         } catch (e) {
           resolve(file);
@@ -2482,26 +2493,13 @@
     document.getElementById('ocrProgress').classList.remove('active');
   }
 
-  // Улучшенный парсер OCR
   function parseOcrText(text) {
     if (!text || !text.trim()) {
       alert('Не удалось распознать текст на фото. Попробуйте более чёткое изображение.');
       return;
     }
-
-    // Нормализация: заменяем частые ошибки OCR
-    let normalized = text
-      .replace(/[ОоOo]/g, '0')  // буква О -> цифра 0 не всегда верно, но помогает в цифрах
-      .replace(/[Ss]/g, '5')    // S -> 5 часто в оценках
-      .replace(/[Зз]/g, '3')    // З -> 3
-      .replace(/[Чч]/g, '4')    // Ч -> 4
-      .replace(/[бb]/g, '6');   // б -> 6
-
-    // Но осторожно: восстанавливаем буквы в тексте — вместо этого делаем более умно:
-    // разделим на строки, и в каждой строке заменим только изолированные "цифры".
     const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     const lines = rawLines.map(line => {
-      // Только для одиночных символов делаем подмены
       return line.split(/(\s+)/).map(tok => {
         const t = tok.trim();
         if (t.length === 1) {
@@ -2522,8 +2520,6 @@
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const lower = line.toLowerCase();
-
-      // 1. Определяем предмет
       let foundSubject = null;
       for (const [subj, keywords] of Object.entries(SUBJECT_KEYWORDS)) {
         if (keywords.some(kw => lower.includes(kw))) {
@@ -2532,26 +2528,19 @@
         }
       }
       if (foundSubject) lastSubject = foundSubject;
-
-      // 2. Определяем тип работы
       let workType = '';
       for (const [key, valType] of Object.entries(WORK_TYPES_MAP)) {
         if (lower.includes(key)) { workType = valType; break; }
       }
       if (workType) lastWorkType = workType;
-
-      // 3. Извлекаем оценки
       const gradeTokens = [];
-      // Разбиваем по пробелам и пунктуации
       const tokens = line.split(/[\s,;:|/\\\-]+/).filter(t => t.length > 0);
       for (const tok of tokens) {
-        // Убираем скобки и точки
         const clean = tok.replace(/[.,;:()\[\]{}]+/g, '').trim();
         if (/^[2-5]$/.test(clean)) {
           gradeTokens.push(parseInt(clean));
         }
       }
-      // Также ищем десятичные вида "4.5", "3,7" — берём целую часть
       const decimals = line.match(/([2-5])[.,]\d+/g);
       if (decimals) {
         for (const d of decimals) {
@@ -2559,11 +2548,8 @@
           if (!gradeTokens.includes(n)) gradeTokens.push(n);
         }
       }
-
-      // 4. Если нашли оценки и есть контекст — добавляем
       const contextRich = !!(foundSubject || lastSubject);
       const isGradeLine = /^[\s2-5.,;:()]+$/.test(line);
-
       if (gradeTokens.length > 0 && (contextRich || isGradeLine)) {
         const subj = foundSubject || lastSubject || 'Предмет';
         const wt = workType || lastWorkType;
@@ -2572,8 +2558,6 @@
         }
       }
     }
-
-    // Дедупликация
     const seen = new Set();
     const unique = [];
     for (const r of results) {
@@ -2583,7 +2567,6 @@
         unique.push(r);
       }
     }
-
     if (unique.length > 0) {
       const today = new Date().toISOString().split('T')[0];
       unique.forEach(r => addGrade(r.subject, r.value, r.workType, today));
