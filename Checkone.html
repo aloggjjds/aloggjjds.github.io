@@ -1,0 +1,3122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>check — быстрый ИИ</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #f0f1f3;
+    --bg-grad: #f0f1f3;
+    --card: #ffffff;
+    --text: #0a0a0a;
+    --text-dim: #6b6b70;
+    --text-mute: #8e8e93;
+    --text-soft: #9a9a9f;
+    --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0.72) 100%);
+    --glass-border: rgba(255,255,255,0.65);
+    --glass-shadow-1: rgba(255,255,255,0.85);
+    --glass-shadow-2: rgba(0,0,0,0.08);
+    --bot-bg: linear-gradient(135deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.75) 60%, rgba(255,255,255,0.88) 100%);
+    --bot-border: rgba(255,255,255,0.55);
+    --chip-bg: rgba(255,255,255,0.85);
+    --input-placeholder: #8e8e93;
+    --hairline: rgba(0,0,0,0.06);
+  }
+  html.dark {
+    --bg: #0a0a0c;
+    --bg-grad: #0a0a0c;
+    --card: #16161a;
+    --text: #f5f5f7;
+    --text-dim: #b0b0b8;
+    --text-mute: #7a7a82;
+    --text-soft: #6a6a72;
+    --glass-bg: linear-gradient(135deg, rgba(40,40,46,0.75) 0%, rgba(30,30,36,0.55) 45%, rgba(38,38,44,0.72) 100%);
+    --glass-border: rgba(255,255,255,0.10);
+    --glass-shadow-1: rgba(255,255,255,0.10);
+    --glass-shadow-2: rgba(0,0,0,0.35);
+    --bot-bg: linear-gradient(135deg, rgba(40,40,46,0.85) 0%, rgba(28,28,34,0.75) 60%, rgba(38,38,44,0.85) 100%);
+    --bot-border: rgba(255,255,255,0.08);
+    --chip-bg: rgba(40,40,46,0.75);
+    --input-placeholder: #7a7a82;
+    --hairline: rgba(255,255,255,0.08);
+  }
+  html, body {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    overscroll-behavior: none; overflow: hidden;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    transition: background .25s, color .25s;
+  }
+  body { display: flex; flex-direction: column; }
+  svg { display: block; }
+
+  .glass {
+    position: relative;
+    background: var(--glass-bg);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      0 1px 0 var(--glass-shadow-1) inset,
+      0 -1px 0 rgba(0,0,0,0.04) inset,
+      0 8px 32px var(--glass-shadow-2),
+      0 2px 8px rgba(0,0,0,0.04);
+    transition: background .25s, border .25s;
+  }
+  .glass::before {
+    content: ""; position: absolute; inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 35%);
+    pointer-events: none;
+  }
+  html.dark .glass::before { background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 35%); }
+
+  #home-screen {
+    flex: 1; overflow-y: auto;
+    padding: 0 14px 140px 14px;
+    -webkit-overflow-scrolling: touch;
+    display: block; background: var(--bg);
+  }
+  #home-screen.hidden { display: none; }
+
+  .home-topbar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 2px 10px 2px;
+    background: linear-gradient(to bottom, var(--bg) 65%, transparent);
+  }
+  .home-topbar .home-actions { display: flex; gap: 8px; }
+  .menu-btn {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text);
+    transition: transform .12s;
+  }
+  .menu-btn:active { transform: scale(.93); }
+
+  .date-group { margin-bottom: 16px; }
+  .date-label {
+    font-size: 15px; font-weight: 400;
+    color: var(--text-mute); letter-spacing: -0.2px;
+    padding: 10px 4px 8px 4px;
+  }
+  .chats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+  .chat-card {
+    border-radius: 26px;
+    cursor: pointer;
+    transition: transform .15s;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    box-shadow:
+      0 1px 0 var(--glass-shadow-1) inset,
+      0 6px 22px rgba(0,0,0,0.055),
+      0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid var(--hairline);
+    user-select: none;
+    -webkit-user-select: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .chat-card:active { transform: scale(.975); }
+  .chat-card .card-body {
+    padding: 14px 16px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .chat-card .card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.08;
+    letter-spacing: -0.85px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    width: 100%;
+  }
+  .chat-card .card-preview {
+    font-size: 15px;
+    color: var(--text-soft);
+    line-height: 1.32;
+    font-weight: 400;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    letter-spacing: -0.15px;
+    width: 100%;
+  }
+
+  .fab {
+    position: fixed; bottom: calc(20px + env(safe-area-inset-bottom));
+    width: 64px; height: 64px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 15;
+    transition: transform .12s;
+  }
+  .fab:active { transform: scale(.92); }
+  .fab-search { left: 20px; color: var(--text); }
+  .fab-new {
+    right: 20px; color: #ffffff;
+    background: linear-gradient(135deg, #2a2a2e 0%, #0a0a0a 50%, #1a1a1e 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.14) inset, 0 8px 32px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+
+  /* Контекстное меню */
+  .ctx-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.30);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px; animation: fadeIn .18s ease;
+  }
+  .ctx-overlay.visible { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .ctx-menu {
+    width: 100%; max-width: 300px;
+    border-radius: 20px; padding: 6px;
+    animation: popIn .22s cubic-bezier(.2,.9,.3,1.1);
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.92) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .ctx-title {
+    padding: 10px 14px 6px 14px;
+    font-size: 12px; color: var(--text-mute);
+    font-weight: 500; letter-spacing: 0.2px;
+    text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ctx-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 12px;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    color: var(--text);
+    transition: background .12s;
+    letter-spacing: -0.15px;
+  }
+  .ctx-item:active { background: rgba(127,127,127,0.15); }
+  .ctx-item.danger { color: #ff3b30; }
+  .ctx-item svg { flex-shrink: 0; opacity: 0.85; width: 17px; height: 17px; }
+  .ctx-sep { height: 1px; background: var(--hairline); margin: 4px 10px; }
+
+  /* Поиск */
+  .search-panel {
+    position: fixed; inset: 0; z-index: 90;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    animation: fadeIn .18s ease;
+  }
+  .search-panel.visible { display: flex; }
+  .search-topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 14px 10px 14px;
+    padding-top: calc(14px + env(safe-area-inset-top));
+  }
+  .search-input-wrap {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+  }
+  .search-input-wrap input {
+    flex: 1; border: none; outline: none;
+    font-size: 16px; font-family: inherit;
+    background: transparent; color: var(--text);
+  }
+  .search-results { flex: 1; overflow-y: auto; padding: 8px 14px 40px 14px; }
+  .search-item {
+    padding: 12px 14px;
+    background: var(--card);
+    border-radius: 16px; margin-bottom: 8px;
+    cursor: pointer;
+    border: 1px solid var(--hairline);
+  }
+  .search-item:active { transform: scale(.99); }
+  .search-item .si-title {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .search-item .si-preview {
+    font-size: 13px; color: var(--text-mute);
+    line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .search-item mark {
+    background: rgba(10,132,255,0.2); color: inherit;
+    border-radius: 3px; padding: 0 2px;
+  }
+
+  /* ===== ЧАТ ===== */
+  #chat-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+  #chat-screen.hidden { display: none; }
+
+  .topbar {
+    display: grid; grid-template-columns: 52px 1fr 52px;
+    align-items: center; gap: 12px;
+    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--bg) 75%, transparent);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    z-index: 10;
+  }
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text);
+    transition: transform .1s;
+  }
+  .icon-btn:active { transform: scale(.93); }
+  .chat-title {
+    text-align: center; font-size: 16px; font-weight: 600;
+    color: var(--text); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; padding: 0 8px; letter-spacing: -0.35px;
+  }
+
+  #screen { flex: 1; overflow-y: auto; padding: 8px 16px 160px 16px; -webkit-overflow-scrolling: touch; }
+  .welcome {
+    min-height: 45vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; gap: 22px; color: var(--text-mute);
+  }
+  .welcome .logo { width: 62px; height: 62px; color: var(--text); opacity: .9; }
+  .welcome h1 {
+    font-size: 19px; font-weight: 500; line-height: 1.35;
+    margin: 0; max-width: 300px; color: var(--text-dim); letter-spacing: -0.4px;
+  }
+  .welcome-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; max-width: 340px;
+    margin-top: 4px;
+  }
+  .welcome-chips .chip { font-size: 13px; }
+
+  #messages { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+  .msg {
+    max-width: 86%; padding: 11px 15px; border-radius: 22px;
+    line-height: 1.5; font-size: 15px;
+    word-wrap: break-word;
+    animation: msgIn .22s cubic-bezier(.2,.9,.3,1);
+    letter-spacing: -0.15px;
+    transition: transform .12s;
+  }
+  .msg.bot { cursor: pointer; }
+  .msg.bot:active { transform: scale(.995); }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .user {
+    align-self: flex-end; color: #ffffff;
+    background: linear-gradient(135deg, #2a2a2e 0%, #0a0a0a 50%, #1a1a1e 100%);
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 12px rgba(10,10,10,0.20);
+    white-space: pre-wrap;
+  }
+  .bot {
+    align-self: flex-start; color: var(--text);
+    background: var(--bot-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom-left-radius: 8px;
+    box-shadow:
+      0 1px 0 var(--glass-shadow-1) inset,
+      0 4px 18px rgba(0,0,0,0.055),
+      0 1px 3px rgba(0,0,0,0.03);
+    border: 1px solid var(--bot-border);
+  }
+  .msg a { color: #0a84ff; text-decoration: none; }
+  .msg .src {
+    display: block; margin-top: 8px; font-size: 12px;
+    color: var(--text-mute); line-height: 1.4;
+  }
+  .msg .src a { color: var(--text-mute); text-decoration: none; }
+
+  .expand-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px; padding: 8px 14px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    font-size: 13.5px; font-weight: 600;
+    color: var(--text); cursor: pointer;
+    transition: background .15s, transform .1s;
+    letter-spacing: -0.2px; font-family: inherit;
+  }
+  .expand-btn:hover { background: color-mix(in srgb, var(--bg) 90%, transparent); }
+  .expand-btn:active { transform: scale(.97); }
+  .expand-btn svg { flex-shrink: 0; }
+
+  .chips-row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 12px; animation: msgIn .22s ease;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 13px;
+    background: var(--chip-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    font-size: 13.5px; font-weight: 500;
+    color: var(--text); cursor: pointer; font-family: inherit;
+    transition: background .15s, transform .1s;
+    letter-spacing: -0.2px; white-space: nowrap;
+    box-shadow: 0 1px 0 var(--glass-shadow-1) inset, 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .chip:hover { background: color-mix(in srgb, var(--chip-bg) 80%, var(--text) 5%); }
+  .chip:active { transform: scale(.96); }
+  .chip svg { opacity: 0.7; flex-shrink: 0; }
+
+  .fraction {
+    display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: middle; margin: 0 2px;
+    font-size: 0.85em; line-height: 1.1;
+    position: relative; top: -0.05em;
+  }
+  .fraction .num { border-bottom: 1.5px solid currentColor; padding: 0 4px 1px 4px; }
+  .fraction .den { padding: 1px 4px 0 4px; }
+
+  .wiki-img-wrap {
+    display: inline-block; margin: 4px 0 10px 0;
+    border-radius: 14px; overflow: hidden;
+    background: #eef0f3; line-height: 0;
+    max-width: 220px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.10);
+    animation: msgIn .25s ease;
+  }
+  .wiki-img {
+    display: block; max-width: 100%; max-height: 220px;
+    width: auto; height: auto; background: #eef0f3;
+    opacity: 0; transition: opacity .3s; cursor: pointer;
+  }
+  .wiki-img.loaded { opacity: 1; }
+
+  .qr-wrap {
+    display: inline-block; margin: 8px 0;
+    padding: 10px; background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.10);
+  }
+  .qr-wrap img { display: block; width: 180px; height: 180px; }
+
+  .timer-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px;
+    background: var(--bot-bg);
+    border-radius: 16px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+  .timer-badge svg { opacity: 0.7; }
+  .timer-badge.done { color: #ff3b30; }
+
+  .cursor {
+    display: inline-block; width: 7px; height: 15px;
+    background: var(--text); margin-left: 2px; vertical-align: -2px;
+    animation: blink .9s steps(2,start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .dots span {
+    display: inline-block; width: 6px; height: 6px; margin: 0 2px;
+    background: #c0c0c5; border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .dots span:nth-child(2){ animation-delay: .15s; }
+  .dots span:nth-child(3){ animation-delay: .3s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); opacity:.5; }
+    30% { transform: translateY(-4px); opacity:1; }
+  }
+
+  .status-line {
+    font-size: 13px; color: var(--text-mute);
+    padding: 4px 2px; display: flex; align-items: center; gap: 8px;
+    animation: msgIn .18s ease;
+  }
+  .status-line .spin {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid #d8d8dc; border-top-color: var(--text);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  .status-line svg { flex-shrink: 0; opacity: 0.7; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .uploaded-img {
+    display: block; max-width: 180px; max-height: 180px;
+    border-radius: 14px; margin-top: 6px; object-fit: cover;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(100px + env(safe-area-inset-bottom));
+    padding: 10px 18px;
+    background: rgba(20,20,22,0.92);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 13.5px; font-weight: 500;
+    z-index: 200;
+    animation: toastIn .22s cubic-bezier(.2,.9,.3,1.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    pointer-events: none;
+    letter-spacing: -0.15px;
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ===== КОМПОЗЕР ===== */
+  .composer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 55%, transparent);
+    z-index: 10;
+  }
+  .pill {
+    display: flex; align-items: center; gap: 8px;
+    border-radius: 999px;
+    padding: 6px 6px 6px 12px;
+    position: relative;
+  }
+  .pill-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: none;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text); flex-shrink: 0;
+    transition: background .15s;
+    font-size: 19px; font-weight: 500;
+  }
+  .pill-btn:active { background: rgba(127,127,127,0.15); }
+
+  .pill-btn.at-btn {
+    border: none; background: transparent;
+    width: 36px; height: 36px;
+    font-size: 26px; font-weight: 500;
+    color: var(--text); line-height: 1;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .12s;
+  }
+  .pill-btn.at-btn.active { color: #0a84ff; transform: scale(1.05); }
+  .pill-btn.at-btn:active { transform: scale(.92); }
+  .pill-btn.mic-btn.recording { color: #ff3b30; animation: pulseRec 1s infinite; }
+  @keyframes pulseRec {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  #input {
+    flex: 1; border: none; outline: none; resize: none;
+    font-size: 16px; line-height: 1.3; max-height: 90px;
+    font-family: inherit; color: var(--text); background: transparent;
+    padding: 6px 0; min-width: 0;
+  }
+  #input::placeholder { color: var(--input-placeholder); }
+
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: transform .1s, opacity .15s;
+    opacity: .4;
+    background: linear-gradient(135deg, #2a2a2e 0%, #0a0a0a 50%, #1a1a1e 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 12px rgba(10,10,10,0.20);
+  }
+  .send-btn.visible { opacity: 1; }
+  .send-btn:active { transform: scale(.94); }
+  .send-btn.stop { background: #ff3b30; opacity: 1; box-shadow: 0 2px 12px rgba(255,59,48,0.35); }
+
+  .char-counter {
+    font-size: 11px;
+    color: var(--text-mute);
+    padding: 0 4px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .char-counter.visible { opacity: 1; }
+
+  .cmd-panel {
+    position: fixed; left: 14px; right: 14px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    border-radius: 18px;
+    padding: 6px;
+    z-index: 20; max-height: 55vh; overflow-y: auto;
+    display: none; animation: popIn .2s ease;
+  }
+  .cmd-panel.visible { display: block; }
+  .cmd-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 12px;
+    cursor: pointer; transition: background .15s;
+  }
+  .cmd-item:active { background: rgba(127,127,127,0.15); }
+  .cmd-code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-weight: 600; color: var(--text);
+    background: rgba(127,127,127,0.15);
+    padding: 2px 7px; border-radius: 7px;
+    font-size: 12px; flex-shrink: 0;
+    min-width: 58px; text-align: center;
+  }
+  .cmd-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.3; }
+  .cmd-hint {
+    padding: 8px 12px 4px 12px; font-size: 11px;
+    color: var(--text-mute); text-transform: uppercase; letter-spacing: .5px;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+  <div id="home-screen">
+    <div class="home-topbar">
+      <button class="menu-btn glass" id="theme-btn" aria-label="Тема">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+      <button class="menu-btn glass" id="menu-btn" aria-label="Меню">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+          <line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
+    </div>
+    <div id="chats-container"></div>
+
+    <button class="fab fab-search glass" id="fab-search" aria-label="Поиск">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="21" y1="21" x2="16.5" y2="16.5"/>
+      </svg>
+    </button>
+    <button class="fab fab-new" id="fab-new" aria-label="Новый чат">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Поиск -->
+  <div class="search-panel" id="search-panel">
+    <div class="search-topbar">
+      <div class="search-input-wrap glass">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6">
+          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/>
+        </svg>
+        <input id="search-input" placeholder="Поиск по чатам" autocomplete="off">
+      </div>
+      <button class="icon-btn glass" id="search-close">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <div id="chat-screen" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn glass" id="back-btn" aria-label="Назад">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="chat-title" id="chat-title">Новый чат</div>
+      <button class="icon-btn glass" id="new-chat" aria-label="Новый чат">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="screen">
+      <div class="welcome" id="welcome">
+        <svg class="logo" viewBox="0 0 64 64" fill="currentColor">
+          <path d="M50 26c-2-2-5-3-8-3-2 0-3 .3-4.5 1-1.2-6-6.5-10.5-13-10.5-4.5 0-8.5 2.2-11 5.7L14 15c-1-.7-2.3-.5-3 .5s-.5 2.3.5 3l6.5 4.7c-.3 1-.5 2-.5 3.1 0 6.7 6 12.2 13.5 12.2.8 0 1.5 0 2.3-.2-1.2 2-2 4.2-2 6.4 0 .8.7 1.5 1.5 1.5h3.5c.8 0 1.5-.7 1.5-1.5 0-2.3.9-4.3 2.3-5.7 1.4 1.4 3.4 2.3 5.7 2.3h3.5c.8 0 1.5-.7 1.5-1.5s-.7-1.5-1.5-1.5H46c-1.4 0-2.6-.6-3.5-1.5 1.4-.9 2.6-2.1 3.5-3.5 1 1 2.5 1.5 4 1.5h4c.8 0 1.5-.7 1.5-1.5s-.7-1.5-1.5-1.5h-4c-.6 0-1-.4-1-1 0-1.7.6-3.2 1.5-4.5.9 1.3 2.5 2.2 4.3 2.2 1 0 2-.3 2.8-.8l.2-.1c.6-.4.8-1.2.4-1.8-.4-.6-1.2-.8-1.8-.4l-.2.1c-.4.3-.9.4-1.4.4-.9 0-1.6-.5-2-1.2.9-.7 2-1.2 3.2-1.4.8-.1 1.3-.8 1.2-1.6-.1-.8-.8-1.3-1.6-1.2-2.4.3-4.5 1.4-6 3zM25 27c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        </svg>
+        <h1>Здравствуйте. Чем могу помочь?</h1>
+        <div class="welcome-chips" id="welcome-chips"></div>
+      </div>
+      <div id="messages"></div>
+    </div>
+
+    <div class="cmd-panel glass" id="cmd-panel">
+      <div class="cmd-hint">Команды</div>
+      <div class="cmd-item" data-cmd="@teach "><span class="cmd-code">@teach</span><span class="cmd-desc">Объяснить тему</span></div>
+      <div class="cmd-item" data-cmd="@wiki "><span class="cmd-code">@wiki</span><span class="cmd-desc">Поиск знаний</span></div>
+      <div class="cmd-item" data-cmd="@fix "><span class="cmd-code">@fix</span><span class="cmd-desc">Проверить ошибки</span></div>
+      <div class="cmd-item" data-cmd="@sum "><span class="cmd-code">@sum</span><span class="cmd-desc">Сделать краткое резюме</span></div>
+      <div class="cmd-item" data-cmd="@tr "><span class="cmd-code">@tr</span><span class="cmd-desc">Перевести текст</span></div>
+      <div class="cmd-item" data-cmd="@math "><span class="cmd-code">@math</span><span class="cmd-desc">Математика и физика</span></div>
+      <div class="cmd-item" data-cmd="@img "><span class="cmd-code">@img</span><span class="cmd-desc">Нарисовать картинку</span></div>
+      <div class="cmd-item" data-cmd="@qr "><span class="cmd-code">@qr</span><span class="cmd-desc">Создать QR-код</span></div>
+      <div class="cmd-item" data-cmd="@timer "><span class="cmd-code">@timer</span><span class="cmd-desc">Поставить таймер</span></div>
+      <div class="cmd-item" data-cmd="@gdz "><span class="cmd-code">@gdz</span><span class="cmd-desc">Найти ГДЗ</span></div>
+      <div class="cmd-item" data-cmd="@weather "><span class="cmd-code">@weather</span><span class="cmd-desc">Погода</span></div>
+      <div class="cmd-item" data-cmd="@help"><span class="cmd-code">@help</span><span class="cmd-desc">Все команды</span></div>
+    </div>
+
+    <div class="composer">
+      <div class="pill glass">
+        <button class="pill-btn" id="plus-btn" aria-label="Фото">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="pill-btn at-btn" id="at-btn" aria-label="Команды">@</button>
+        <textarea id="input" rows="1" placeholder="Сообщение"></textarea>
+        <div class="char-counter" id="char-counter">0</div>
+        <button class="pill-btn mic-btn" id="mic-btn" aria-label="Микрофон">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M19 10a7 7 0 0 1-14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </button>
+        <button id="send" class="send-btn" aria-label="Отправить">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" style="display:none">
+
+<script>
+/* ============================================================
+   ТЕМА
+   ============================================================ */
+const THEME_KEY = "check_theme_v1";
+function applyTheme(dark){
+  document.documentElement.classList.toggle("dark", !!dark);
+  const icon = document.getElementById("theme-icon");
+  if (icon){
+    icon.innerHTML = dark
+      ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+      : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }
+}
+function initTheme(){
+  let saved = localStorage.getItem(THEME_KEY);
+  if (saved === null){
+    const preferDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    saved = preferDark ? "dark" : "light";
+    localStorage.setItem(THEME_KEY, saved);
+  }
+  applyTheme(saved === "dark");
+}
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+const recentPhrases = [];
+function noRepeat(a){
+  const fresh = a.filter(x => !recentPhrases.includes(x));
+  const chosen = pick(fresh.length ? fresh : a);
+  recentPhrases.push(chosen);
+  if (recentPhrases.length > 50) recentPhrases.shift();
+  return chosen;
+}
+function escapeHtml(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function dateLabel(ts){
+  const d = new Date(ts), now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const that = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((today - that) / 86400000);
+  if (diff === 0) return "Сегодня";
+  if (diff === 1) return "Вчера";
+  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return d.getDate()+" "+months[d.getMonth()];
+}
+function showToast(text){
+  const old = document.querySelector(".toast");
+  if (old) old.remove();
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity = "0"; t.style.transition = "opacity .3s"; }, 1600);
+  setTimeout(()=>{ t.remove(); }, 2000);
+}
+
+const ICONS = {
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
+  book: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  sigma: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4H6l6 8-6 8h12"/></svg>',
+  check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  sparkles: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z"/></svg>',
+  cloud: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+  globe: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  image: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  ai: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 7v10l8 5 8-5V7z"/><path d="M12 22V12"/><path d="M12 12L4 7"/><path d="M12 12l8-5"/></svg>',
+  alice: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8L20 10L14 12L12 18L10 12L4 10L10 8Z"/><circle cx="12" cy="10" r="2" fill="currentColor" stroke="none"/></svg>',
+  qr: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/><path d="M17 17h3v3h-3z"/><path d="M14 20h3"/><path d="M20 14v3"/></svg>',
+  timer: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/><line x1="9" y1="2" x2="15" y2="2"/></svg>',
+  translate: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M7 4v3"/><path d="M9 5c0 4-2 8-6 9"/><path d="M5 9c0 3 4 6 8 6"/><path d="M14 20l4-10 4 10"/><path d="M15 17h6"/></svg>',
+  summary: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+};
+
+/* ============================================================
+   ХРАНИЛИЩЕ
+   ============================================================ */
+const STORAGE_KEY = "check_chats_v6";
+const CURRENT_KEY = "check_current_v6";
+const PROFILE_KEY = "check_profile_v6";
+
+function loadChats(){
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+  catch { return []; }
+}
+function saveChats(chats){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(chats)); } catch {} }
+function createChat(){
+  const id = "chat_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+  const chat = { id, title: "Новый чат", preview: "", cover: null, messages: [], createdAt: Date.now(), updatedAt: Date.now() };
+  const chats = loadChats(); chats.unshift(chat); saveChats(chats); return chat;
+}
+function getChat(id){ return loadChats().find(c => c.id === id) || null; }
+function updateChat(id, patch){
+  const chats = loadChats();
+  const idx = chats.findIndex(c => c.id === id);
+  if (idx === -1) return null;
+  chats[idx] = { ...chats[idx], ...patch, updatedAt: Date.now() };
+  saveChats(chats); return chats[idx];
+}
+function deleteChat(id){
+  const chats = loadChats().filter(c => c.id !== id);
+  saveChats(chats);
+}
+function loadProfile(){
+  try { const raw = localStorage.getItem(PROFILE_KEY); return raw ? JSON.parse(raw) : { name: null, tone: "formal" }; }
+  catch { return { name: null, tone: "formal" }; }
+}
+function saveProfile(p){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch {} }
+
+/* ============================================================
+   ЗАГОЛОВКИ
+   ============================================================ */
+const TITLE_KEYWORDS = {
+  "номер": "Номер", "пример": "Пример", "уравнени": "Уравнение", "интеграл": "Интеграл",
+  "производн": "Производная", "дроб": "Дроби", "процент": "Проценты", "задач": "Задача",
+  "корень": "Корень", "степен": "Степени", "логарифм": "Логарифмы", "матриц": "Матрицы",
+  "текст": "Текст", "ошибк": "Ошибки", "орфограф": "Орфография", "грамматик": "Грамматика",
+  "сочинени": "Сочинение", "изложени": "Изложение", "диктант": "Диктант",
+  "литератур": "Литература", "поэзи": "Поэзия", "поэт": "Поэт", "писател": "Писатель",
+  "роман": "Роман", "стих": "Стих", "пушкин": "Пушкин", "лермонтов": "Лермонтов",
+  "толстой": "Толстой", "достоевск": "Достоевский", "чехов": "Чехов", "гоголь": "Гоголь",
+  "истори": "История", "войн": "Война", "революц": "Революция", "битв": "Битва",
+  "наполеон": "Наполеон", "древн": "Древний мир", "средневек": "Средневековье",
+  "физик": "Физика", "хими": "Химия", "биологи": "Биология", "молекул": "Молекулы",
+  "атом": "Атомы", "днк": "ДНК", "клетк": "Клетки",
+  "космос": "Космос", "планет": "Планеты", "звезд": "Звёзды", "галактик": "Галактики",
+  "марс": "Марс", "луна": "Луна", "гагарин": "Гагарин", "ракет": "Ракеты",
+  "программ": "Программирование", "код": "Код", "python": "Python", "javascript": "JavaScript",
+  "нейросет": "Нейросети", "ии": "ИИ", "интернет": "Интернет", "сайт": "Сайт",
+  "животн": "Животные", "кошк": "Кошки", "собак": "Собаки", "птиц": "Птицы",
+  "растени": "Растения", "дерев": "Деревья", "океан": "Океан", "мор": "Море",
+  "погод": "Погода", "город": "Город", "путешеств": "Путешествия", "еда": "Еда",
+  "рецепт": "Рецепт", "спорт": "Спорт", "футбол": "Футбол", "музык": "Музыка",
+  "кино": "Кино", "фильм": "Фильм", "игр": "Игры", "книг": "Книги",
+  "здоров": "Здоровье", "психолог": "Психология", "мозг": "Мозг", "память": "Память",
+  "сон": "Сон", "привычк": "Привычки", "привет": "Приветствие", "знакомств": "Знакомство",
+  "факт": "Факт", "шутк": "Шутка", "цитат": "Цитата", "идея": "Идея",
+  "гдз": "ГДЗ", "решебник": "Решебник", "картинк": "Картинка", "рисунок": "Рисунок",
+  "перевод": "Перевод", "резюме": "Резюме", "qr": "QR-код",
+};
+const TITLE_TEMPLATES = [
+  (k) => k, (k) => k + ": обзор", (k) => "Про " + k.toLowerCase(),
+  (k) => k + " — коротко", (k) => "Всё о " + k.toLowerCase(), (k) => k + ": что важно",
+  (k) => "Разбираем " + k.toLowerCase(), (k) => k + " в двух словах",
+  (k) => "О " + k.toLowerCase(), (k) => k + " — детали",
+];
+function generateTitle(text){
+  let t = text.trim();
+  t = t.replace(/^@\w+\s*/i, "").trim();
+  const lower = t.toLowerCase().replace(/ё/g,"е");
+  for (const [kw, label] of Object.entries(TITLE_KEYWORDS)){
+    if (lower.includes(kw)){
+      const template = pick(TITLE_TEMPLATES);
+      let title = template(label);
+      const numMatch = t.match(/(?:номер|№|задани[ея]|упражнени[ея])\s*(\d+)/i);
+      if (numMatch) title = label + " " + numMatch[1];
+      return title;
+    }
+  }
+  t = t.replace(/^(привет|здравствуйте|хай|hi|hello|добрый день|добрый вечер|доброе утро)[!.,\s]*/i, "");
+  t = t.replace(/[?!.,;:]+/g, " ").trim();
+  if (!t) return "Новый чат";
+  const words = t.split(/\s+/).filter(Boolean);
+  let title = words.slice(0, 4).join(" ");
+  if (title.length > 36) title = title.slice(0, 33) + "…";
+  return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+/* ============================================================
+   ВИКИПЕДИЯ
+   ============================================================ */
+async function fetchWikipedia(query, full){
+  const clean = query
+    .replace(/^(что такое|кто такой|кто такая|кто такие|расскажи про|расскажи о|расскажи об|объясни|объясните|поясни|растолкуй|что значит|определение|что означает|что за|в чём смысл|в чем смысл)\s+/i, "")
+    .replace(/[?!.]+$/,"").trim();
+  if (!clean || clean.length > 120) return null;
+
+  const getPage = async (lang, title) => {
+    try {
+      const exIntro = full ? "" : "&exintro=1";
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*`+
+        `&prop=extracts|info|pageimages&inprop=url&explaintext=1&redirects=1`+
+        `&piprop=thumbnail|name&pithumbsize=500`+exIntro+
+        `&titles=${encodeURIComponent(title)}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const pages = data.query && data.query.pages;
+      if (!pages) return null;
+      const page = Object.values(pages)[0];
+      if (!page || !page.extract || page.extract.length < 20) return null;
+      let image = null;
+      if (page.thumbnail && page.thumbnail.source){
+        image = page.thumbnail.source;
+        if (/\.svg$/i.test(image)) image = null;
+      }
+      return {
+        title: page.title, extract: page.extract,
+        url: page.fullurl || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(page.title)}`,
+        lang, image,
+      };
+    } catch { return null; }
+  };
+  const search = async (lang, q) => {
+    try {
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=${encodeURIComponent(q)}&srlimit=1`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const hit = data.query && data.query.search && data.query.search[0];
+      return hit ? hit.title : null;
+    } catch { return null; }
+  };
+
+  for (const lang of ["ru","en"]){
+    let r = await getPage(lang, clean);
+    if (r) return r;
+    const found = await search(lang, clean);
+    if (found){ r = await getPage(lang, found); if (r) return r; }
+  }
+  const simplified = clean.replace(/\b(это|такое|значит|означает|определение|понятие)\b/gi, "").replace(/\s{2,}/g," ").trim();
+  if (simplified && simplified !== clean){
+    for (const lang of ["ru","en"]){
+      const found = await search(lang, simplified);
+      if (found){ const r = await getPage(lang, found); if (r) return r; }
+    }
+  }
+  return null;
+}
+function cleanWikiText(text){
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F2FF}\u{FE0F}\u{200D}]/gu, "")
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*\[[^\]]*\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s*([.,;:!?])\s*/g, "$1 ")
+    .trim();
+}
+function shortenWiki(text, maxLen = 500){
+  let t = cleanWikiText(text).replace(/\s+/g," ").trim();
+  if (t.length <= maxLen) return t;
+  const cut = t.slice(0, maxLen);
+  const lastDot = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+  if (lastDot > 180) return cut.slice(0, lastDot+1);
+  return cut.trim() + "…";
+}
+
+/* ============================================================
+   ВНЕШНИЕ API — по требованию
+   ============================================================ */
+async function yandexSpell(text){
+  try {
+    const res = await fetch(`https://speller.yandex.net/services/spellservice?op=checkText&text=${encodeURIComponent(text)}&lang=ru,en&options=6`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) return null;
+    return data;
+  } catch { return null; }
+}
+async function languageToolCheck(text){
+  try {
+    const res = await fetch("https://api.languagetool.org/v2/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `text=${encodeURIComponent(text)}&language=ru-RU`
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.matches || !data.matches.length) return null;
+    return data.matches;
+  } catch { return null; }
+}
+async function wolframProxy(query){
+  try {
+    const res = await fetch("https://gateway.pipeworx.io/wolfram-alpha/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "short_answer", arguments: { query } } })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text) || null;
+  } catch { return null; }
+}
+async function fetchDuckDuckGo(query){
+  try {
+    const url = `https://api.duckduckgo.com/?format=json&q=${encodeURIComponent(query)}&no_html=1&skip_disambig=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    let answer = null, source = null;
+    if (data.Answer && data.Answer.text){ answer = data.Answer.text; source = "DuckDuckGo"; }
+    else if (data.AbstractText && data.AbstractText.length > 20){ answer = data.AbstractText; source = data.AbstractSource || "DuckDuckGo"; }
+    else if (data.Definition && data.Definition.length > 10){ answer = data.Definition; source = data.DefinitionSource || "DuckDuckGo"; }
+    if (!answer) return null;
+    return { text: answer, source: source, url: data.AbstractURL || data.DefinitionURL || null };
+  } catch { return null; }
+}
+async function pollinationsText(prompt){
+  try {
+    const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+    if (!res.ok) return null;
+    return (await res.text()) || null;
+  } catch { return null; }
+}
+function pollinationsImageUrl(prompt){
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true&seed=${Date.now()}`;
+}
+async function searchGdz(subject, num, author, grade){
+  try {
+    let query = "гдз";
+    if (grade) query += " " + grade + " класс";
+    if (subject) query += " " + subject;
+    if (author) query += " " + author;
+    if (num) query += " номер " + num;
+    const url = `https://api.duckduckgo.com/?format=json&q=${encodeURIComponent(query)}&no_html=1&skip_disambig=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = [];
+    if (data.AbstractURL && data.AbstractText){ results.push({ title: data.AbstractText.slice(0, 120), url: data.AbstractURL }); }
+    if (data.Results && data.Results.length){
+      data.Results.forEach(r => { if (r.FirstURL && r.Text) results.push({ title: r.Text, url: r.FirstURL }); });
+    }
+    if (data.RelatedTopics && data.RelatedTopics.length){
+      data.RelatedTopics.forEach(rt => { if (rt.FirstURL && rt.Text) results.push({ title: rt.Text, url: rt.FirstURL }); });
+    }
+    return results.length ? results : null;
+  } catch { return null; }
+}
+/* Перевод — MyMemory API без ключа */
+async function myMemoryTranslate(text, from, to){
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText){
+      return data.responseData.translatedText;
+    }
+    return null;
+  } catch { return null; }
+}
+/* QR-код через api.qrserver.com */
+function qrUrl(text, size = 300){
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=8`;
+}
+
+/* ============================================================
+   ПОГОДА
+   ============================================================ */
+const WEATHER_DB = {
+  "москва":{temp:5,sky:"облачно"}, "питер":{temp:3,sky:"дождь"},
+  "сочи":{temp:18,sky:"ясно"}, "новосибирск":{temp:-8,sky:"снег"},
+  "екатеринбург":{temp:-2,sky:"облачно"}, "казань":{temp:1,sky:"облачно"},
+  "краснодар":{temp:12,sky:"ясно"}, "лондон":{temp:8,sky:"дождь"},
+  "париж":{temp:11,sky:"облачно"}, "нью-йорк":{temp:14,sky:"ясно"},
+  "токио":{temp:16,sky:"ясно"}, "дубай":{temp:32,sky:"ясно"},
+};
+const CITY_ALIASES = {
+  "спб":"питер","санкт петербург":"питер","петербург":"питер","ленинград":"питер",
+  "мск":"москва","нск":"новосибирск","екб":"екатеринбург","нью йорк":"нью-йорк",
+};
+function resolveCity(n){ const k=n.toLowerCase().replace(/ё/g,"е").trim(); return CITY_ALIASES[k]||k; }
+function wmoToText(c){
+  if(c===0)return"ясно"; if(c===1)return"в основном ясно"; if(c===2)return"переменная облачность";
+  if(c===3)return"облачно"; if(c>=45&&c<=48)return"туман"; if(c>=51&&c<=57)return"морось";
+  if(c>=61&&c<=67)return"дождь"; if(c>=71&&c<=77)return"снег"; if(c>=80&&c<=82)return"ливень";
+  if(c>=85&&c<=86)return"снегопад"; if(c>=95&&c<=99)return"гроза"; return"облачно";
+}
+async function fetchRealWeather(city){
+  try {
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru&format=json`;
+    const geoRes = await fetch(geoUrl);
+    if (!geoRes.ok) return null;
+    const geoData = await geoRes.json();
+    const place = geoData.results && geoData.results[0];
+    if (!place) return null;
+    const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&timezone=auto`;
+    const wRes = await fetch(wUrl);
+    if (!wRes.ok) return null;
+    const wData = await wRes.json();
+    const cur = wData.current;
+    if (!cur) return null;
+    return {
+      name: place.name, country: place.country || "",
+      temp: Math.round(cur.temperature_2m), code: cur.weather_code,
+      wind: Math.round(cur.wind_speed_10m), humidity: Math.round(cur.relative_humidity_2m),
+    };
+  } catch { return null; }
+}
+function describeWeatherLocal(city){
+  const w = WEATHER_DB[resolveCity(city)];
+  if (!w) return null;
+  const word = w.temp>15?"тепло":(w.temp<0?"холодно":"прохладно");
+  return pick(["Погода в ","Сейчас в ","В "]) + city + ": " + w.sky + ", около " + w.temp + "°C. На улице " + word + ".";
+}
+
+/* ============================================================
+   МАТЕМАТИКА
+   ============================================================ */
+function safeMath(expr){
+  if (!/^[\d+\-*/().\s^%]+$/.test(expr)) return null;
+  let js = expr.replace(/\^/g,"**");
+  try {
+    const t = tokenize(js);
+    const r = parseExpr(t);
+    if (t.length) return null;
+    if (typeof r!=="number" || !isFinite(r)) return null;
+    return r;
+  } catch { return null; }
+}
+function tokenize(s){
+  const re = /\s*(\d+\.?\d*|\*\*|[+\-*/()%])/g; const out=[]; let m,last=0;
+  while ((m=re.exec(s))) { if (m.index!==last) throw 0; out.push(m[1]); last=re.lastIndex; }
+  if (last!==s.length) throw 0;
+  return out;
+}
+function parseExpr(t){ let l=parseTerm(t); while (t[0]==="+"||t[0]==="-"){ const o=t.shift(); const r=parseTerm(t); l = o==="+"?l+r:l-r;} return l; }
+function parseTerm(t){ let l=parsePow(t); while (t[0]==="*"||t[0]==="/"||t[0]==="%"){ const o=t.shift(); const r=parsePow(t); if(o==="*")l*=r; else if(o==="/")l/=r; else l%=r;} return l; }
+function parsePow(t){ let b=parseFactor(t); if(t[0]==="**"){ t.shift(); const e=parsePow(t); return Math.pow(b,e);} return b; }
+function parseFactor(t){
+  const tok=t.shift();
+  if (tok==="("){ const v=parseExpr(t); if(t.shift()!==")") throw 0; return v; }
+  if (tok==="-") return -parseFactor(t);
+  if (tok==="+") return parseFactor(t);
+  const n=Number(tok); if (isNaN(n)) throw 0; return n;
+}
+function fmt(n){ return Number.isInteger(n) ? n : +n.toFixed(6); }
+function extractMath(text){
+  const m = text.match(/[-+]?\d[\d\s+\-*/().^%]*\d|[-+]?\d/);
+  return m ? m[0].trim() : null;
+}
+function formatFractions(text){
+  return text.replace(/(?<![\d\/])(\d+)\/(\d+)(?![\d\/])/g,
+    (m,a,b)=>`<span class="fraction"><span class="num">${a}</span><span class="den">${b}</span></span>`);
+}
+function parseFractionExpression(text){
+  const m = text.match(/(\d+)\s*\/\s*(\d+)\s*([+\-*])\s*(\d+)\s*\/\s*(\d+)/);
+  if (!m) return null;
+  const a=+m[1], b=+m[2], op=m[3], c=+m[4], d=+m[5];
+  if (!b || !d) return null;
+  let num, den;
+  if (op==="+"){ num=a*d+c*b; den=b*d; }
+  else if (op==="-"){ num=a*d-c*b; den=b*d; }
+  else { num=a*c; den=b*d; }
+  const gcd=(x,y)=>y?gcd(y,x%y):x;
+  const g=gcd(Math.abs(num),Math.abs(den));
+  return { num:num/g, den:den/g };
+}
+function convert(v, from, to){
+  from = from.replace(/°/,"").toLowerCase();
+  to = to.replace(/°/,"").toLowerCase();
+  if ((from==="км" && to==="м") || (from==="km" && to==="m")) return fmt(v)+" км = "+fmt(v*1000)+" м";
+  if (from==="м" && to==="км") return fmt(v)+" м = "+fmt(v/1000)+" км";
+  if (from==="м" && to==="см") return fmt(v)+" м = "+fmt(v*100)+" см";
+  if (from==="см" && to==="м") return fmt(v)+" см = "+fmt(v/100)+" м";
+  if (from==="кг" && to==="г") return fmt(v)+" кг = "+fmt(v*1000)+" г";
+  if (from==="г" && to==="кг") return fmt(v)+" г = "+fmt(v/1000)+" кг";
+  if (from==="c" && to==="f") return fmt(v)+"°C = "+fmt(v*9/5+32)+"°F";
+  if (from==="f" && to==="c") return fmt(v)+"°F = "+fmt((v-32)*5/9)+"°C";
+  const rates = { "долл":90, "доллар":90, "usd":90, "евро":98, "eur":98, "рубл":1, "rub":1 };
+  const fr = Object.keys(rates).find(k=>from.startsWith(k));
+  const tr = Object.keys(rates).find(k=>to.startsWith(k));
+  if (fr && tr) return fmt(v)+" "+fr+" ≈ "+fmt(v*rates[fr]/rates[tr])+" "+tr+" (условно)";
+  return null;
+}
+
+/* ============================================================
+   БАЗЫ
+   ============================================================ */
+const JOKES = [
+  "Почему программисты путают Хэллоуин и Рождество? Потому что OCT 31 == DEC 25.",
+  "Сколько программистов нужно, чтобы вкрутить лампочку? Ни одного — это аппаратная проблема.",
+  "Есть 10 типов людей: те, кто понимает двоичную систему, и те, кто нет.",
+  "Я бы рассказал шутку про рекурсию, но сначала мне нужно рассказать шутку про рекурсию.",
+  "Оптимист видит стакан наполовину полным. Пессимист — наполовину пустым. Инженер — стакан в два раза больше, чем нужно.",
+];
+const FACTS = [
+  "Мёд не портится: археологи находили съедобный мёд в гробницах возрастом 3000 лет.",
+  "У осьминога три сердца и голубая кровь.",
+  "Молния примерно в 5 раз горячее поверхности Солнца.",
+  "Банан — это ягода, а малина — нет.",
+  "Венера вращается в обратную сторону по сравнению с другими планетами.",
+  "У улитки около 25 000 зубов.",
+  "Арбуз на 92% состоит из воды.",
+  "Человеческий мозг тратит около 20% всей энергии тела.",
+  "Первая компьютерная мышь была деревянной.",
+  "Гималаи растут примерно на 5 мм в год.",
+  "ДНК человека на 60% совпадает с ДНК банана.",
+  "Если растянуть всю ДНК человека в линию, она дотянется до Солнца и обратно 600 раз.",
+];
+const QUOTES = [
+  "«Единственный способ делать великую работу — любить то, что делаешь». — Стив Джобс",
+  "«Простота — высшая форма изысканности». — Леонардо да Винчи",
+  "«Не бойтесь медленно идти, бойтесь стоять на месте». — китайская пословица",
+  "«Лучший способ предсказать будущее — изобрести его». — Алан Кэй",
+  "«Мы то, что мы делаем постоянно. Совершенство — не действие, а привычка». — Аристотель",
+];
+
+/* ============================================================
+   ТЕМЫ
+   ============================================================ */
+const TOPICS = [
+  { id: "space", label: "космос",
+    keywords: ["космос","космонавт","гагарин","луна","марс","сатурн","юпитер","звезд","звёзд","планет","ракет","млечн","галактик","вселенн","телескоп","чёрная дыра","черная дыра","астроном","солнечн систем","комет","астероид","спутник"],
+    facts: ["В космосе нет звука — там нечему проводить звуковые волны.","На Венере день длиннее года.","Нейтронная звезда может весить как Солнце, но быть размером с город.","Юпитер настолько большой, что все остальные планеты могли бы поместиться в него.","На Марсе закаты голубые — из-за рассеивания света пылью.","В Млечном Пути около 100–400 миллиардов звёзд.","Свет от Солнца до Земли идёт примерно 8 минут 20 секунд."],
+    opinions: ["Мне кажется, космос — лучшая тема для размышлений о масштабах.","Космос — единственная тема, где вопросов больше, чем ответов."],
+    followups: ["Кстати, у Сатурна 146 известных спутников.","Первую женщину в космосе звали Валентина Терешкова — 1963 год."],
+    suggestions: ["Про Гагарина","Про чёрные дыры","Про Марс","Расскажи факт"] },
+  { id: "history", label: "история",
+    keywords: ["история","война","революц","древн","средневек","импери","царь","король","битв","сражен","династ","рим","грец","египет","наполеон","петр i","пётр i","екатерин","ссср","1917","1941","1945","1812"],
+    facts: ["Великая Китайская стена строилась более 2000 лет.","Клеопатра жила ближе к изобретению iPhone, чем к строительству пирамид.","Оксфордский университет старше империи ацтеков.","Наполеон был около 168 см — средний рост для того времени.","Первая мировая закончилась в 11 часов 11 дня 11 месяца 1918 года."],
+    opinions: ["История — единственная наука, где нельзя провести эксперимент.","Мне нравится в истории то, что даже мелкие решения меняют ход событий на столетия."],
+    followups: ["Могу рассказать про конкретный период — только скажи век или событие."],
+    suggestions: ["Про Древний Рим","Про Наполеона","Про XX век","Расскажи факт"] },
+  { id: "tech", label: "технологии",
+    keywords: ["технолог","компьютер","программ","код","разработ","python","javascript","нейросет","искусственн интеллект","машинн обучен","алгоритм","сервер","интернет","сайт","приложен","iphone","android","гугл","apple","microsoft","openai","gpt"],
+    facts: ["Первая компьютерная программа была написана Адой Лавлейс в 1843 году.","Термин «баг» стал популярным после того, как в 1947 году в реле компьютера нашли мотылька.","Первая версия Python вышла в 1991 году.","Средний смартфон мощнее, чем компьютер, отправивший человека на Луну.","Слово «робот» придумал чешский писатель Карел Чапек в 1920 году."],
+    opinions: ["Технологии — это инструмент. Всё зависит от того, кто его держит.","Главный вопрос про ИИ — не «что он умеет», а «что мы ему доверим»."],
+    followups: ["Могу рассказать, как устроены нейросети простыми словами."],
+    suggestions: ["Про нейросети","Про Python","Про интернет","Расскажи факт"] },
+  { id: "science", label: "наука",
+    keywords: ["наук","физик","хими","биолог","молекул","атом","днк","клетк","эволюц","теори","эксперимент","энерг","гравитац","электрон","протон","ген","бактери","вирус","организм"],
+    facts: ["ДНК человека на 60% совпадает с ДНК банана.","Атом на 99,9999999999996% состоит из пустоты.","Вода — единственное вещество, которое в твёрдом состоянии легче, чем в жидком.","Человек теряет около 4 кг клеток в год — они заменяются новыми.","Скорость света — 299 792 458 м/с, и это предел для передачи информации."],
+    opinions: ["Наука — не набор фактов, а метод сомнения.","Мне нравится, что наука разрешает себе ошибаться — в этом её честность."],
+    followups: ["Могу объяснить любую тему проще — скажи, что именно."],
+    suggestions: ["Про ДНК","Про атомы","Про эволюцию","Расскажи факт"] },
+  { id: "art", label: "искусство",
+    keywords: ["искусств","живопис","картин","художник","музык","песн","групп","альбом","поэзи","стих","литератур","книг","роман","писател","поэт","театр","кино","фильм","режиссер","актер","актёр"],
+    facts: ["«Мона Лиза» Леонардо да Винчи не имеет бровей — так было модно во Флоренции XVI века.","Ван Гог продал при жизни только одну картину.","У Моцарта был абсолютный слух, и он начал сочинять в 5 лет.","Пушкин написал «Евгения Онегина» более 7 лет.","Бетховен продолжал писать музыку, будучи полностью глухим."],
+    opinions: ["Искусство — способ передать то, что нельзя сказать словами.","Хорошая книга — та, которую хочется перечитать через 10 лет."],
+    followups: ["Могу подсказать, что почитать или посмотреть — скажи жанр."],
+    suggestions: ["Про Ван Гога","Про Пушкина","Что почитать","Расскажи факт"] },
+  { id: "sport", label: "спорт",
+    keywords: ["спорт","футбол","хоккей","баскетбол","теннис","олимпиад","чемпионат","матч","команд","тренер","месси","роналду","бокс","плаван","фитнес","тренировк"],
+    facts: ["Первые Олимпийские игры прошли в 776 году до н.э. в Греции.","Футбол — самый популярный вид спорта в мире.","В хоккее шайба может лететь со скоростью до 190 км/ч.","Марафон — 42 км 195 метров.","Усэйн Болт пробежал 100 м за 9,58 секунды — мировой рекорд."],
+    opinions: ["Спорт — единственное место, где правила честные и одинаковые для всех.","В спорте результат виден сразу — в отличие от многих других сфер."],
+    followups: ["За какую команду болеешь?"],
+    suggestions: ["Про футбол","Про Олимпиаду","Про Месси","Расскажи факт"] },
+  { id: "food", label: "еда",
+    keywords: ["еда","еды","кухн","рецепт","готовит","блюд","пицц","суши","борщ","пельмен","кофе","чай","шоколад","морожен","пирог","хлеб","сыр","вино","пиво","ресторан","кафе"],
+    facts: ["Пицца «Маргарита» названа в честь королевы Маргариты Савойской — 1889 год.","Кофе — второй по объёму торговли товар в мире после нефти.","В Японии есть рестораны, где суши подают на конвейере.","Сыр — один из древнейших продуктов, ему более 7000 лет.","Шоколад был напитком ацтеков, и его пили с перцем и без сахара."],
+    opinions: ["Еда — самый честный способ понять культуру.","Я не ем, но по описаниям — борщ звучит как идеальный суп."],
+    followups: ["Что ты больше любишь — сладкое или солёное?"],
+    suggestions: ["Про пиццу","Про кофе","Про шоколад","Расскажи факт"] },
+  { id: "travel", label: "путешествия",
+    keywords: ["путешеств","поездк","стран","город","туризм","отпуск","билет","отел","виз","аэропорт","самолет","самолёт","поезд","европ","ази","африк","америк","австрал","япони","китай","итали","франци","германи","испани"],
+    facts: ["Самая длинная железная дорога в мире — Транссиб, 9289 км.","В Токио больше людей, чем во всей Канаде.","Самый маленький город в мире — Хум в Хорватии.","В Исландии нет комаров.","Австралия — единственный континент, где нет действующих вулканов."],
+    opinions: ["Путешествия — лучший способ понять, что мир больше, чем твои привычки.","Мне нравится идея, что можно уехать и стать немного другим человеком."],
+    followups: ["Куда бы ты хотел поехать?"],
+    suggestions: ["Про Японию","Про Италию","Про Транссиб","Расскажи факт"] },
+  { id: "psychology", label: "психология",
+    keywords: ["психолог","мозг","память","эмоц","чувств","настроен","стресс","тревог","счасть","мотивац","привычк","характер","личность","мышлен","сознан","подсознан"],
+    facts: ["Мозг тратит около 20% всей энергии тела, хотя весит всего 2%.","Человек принимает около 35 000 решений в день.","Мозг не различает реальность и яркое воображение.","Привычка формируется в среднем за 66 дней, а не за 21.","Сон важен для памяти: мозг обрабатывает дневной опыт именно ночью."],
+    opinions: ["Психология — единственная наука, где наблюдатель и объект — одно и то же.","Самое важное в психологии — не «как правильно», а «как честно»."],
+    followups: ["Хочешь, расскажу про какую-нибудь привычку?"],
+    suggestions: ["Про память","Про привычки","Про сон","Расскажи факт"] },
+  { id: "philosophy", label: "философия",
+    keywords: ["философ","смысл жизн","бытие","сознан","свобод","морал","этик","добро","зло","истин","правд","существ","реальн","смерт","бог","религи","вер"],
+    facts: ["Сократ не оставил ни одной записи.","Стоики считали, что счастье — это не событие, а навык.","Ницше написал «Бог умер» не как радость, а как диагноз.","Кант гулял так регулярно, что соседи сверяли по нему часы.","Диоген жил в бочке и считал это свободой."],
+    opinions: ["Философия — не ответы, а правильные вопросы.","Главный философский вопрос не «в чём смысл», а «кто его ищет»."],
+    followups: ["Есть любимый философ?"],
+    suggestions: ["Про Сократа","Про смысл жизни","Про стоиков","Расскажи факт"] },
+  { id: "animals", label: "животные",
+    keywords: ["животн","звер","кошк","собак","кот","пёс","пес","птиц","рыб","насеком","слон","тигр","лев","медвед","волк","лис","заяц","мыш","кит","дельфин","акул","зме","черепах","обезьян","панда","жираф"],
+    facts: ["У осьминога три сердца и голубая кровь.","Слоны — единственные животные, которые не умеют прыгать.","У улитки около 25 000 зубов.","Дельфины дают друг другу имена — особые свисты.","Кошки не чувствуют сладкий вкус.","Собаки видят мир в синем и жёлтом, но не в красном.","Киты могут петь песни, которые длятся часами."],
+    opinions: ["Животные умнее, чем мы привыкли думать.","Больше всего меня удивляет, как животные умеют жить без лишних вопросов."],
+    followups: ["У тебя есть питомец?"],
+    suggestions: ["Про кошек","Про собак","Про осьминога","Расскажи факт"] },
+  { id: "physics", label: "физика",
+    keywords: ["физик","скорость","ускорени","сила тяжест","энерги","давлени","сопротивлени","закон ньютон","закон ом","мощность","импульс","работа силы","ньютон","джоуль","ватт","ампер","вольт"],
+    facts: ["Скорость света — 299 792 458 м/с.","Сила притяжения на Луне в 6 раз меньше, чем на Земле.","Энергия не исчезает и не появляется — только превращается.","Свет от Солнца до Земли идёт 8 минут 20 секунд.","Яблоко упало на Ньютона не для того, чтобы он открыл гравитацию."],
+    opinions: ["Физика — это язык, на котором написана Вселенная.","Мне нравится, что физика объясняет мир через простые формулы."],
+    followups: ["Могу разобрать задачу по шагам — просто напиши условие."],
+    suggestions: ["Про скорость света","Про гравитацию","Про энергию","Расскажи факт"] },
+  { id: "chemistry", label: "химия",
+    keywords: ["хими","реакци","молекул","атом","элемент","кислот","щелоч","оксид","соль","металл","газ","валентност","периодическ","менделеев","вещество","раствор"],
+    facts: ["Периодическая таблица Менделеева была придумана во сне.","Водород — самый распространённый элемент во Вселенной.","Алмаз и графит состоят из одного и того же углерода.","Жидкий кислород — голубого цвета.","В одной капле воды больше молекул, чем звёзд в наблюдаемой Вселенной."],
+    opinions: ["Химия — это конструктор, где детали — атомы.","Мне нравится, что химия объясняет, почему мир такой, а не другой."],
+    followups: ["Могу рассказать про конкретный элемент — просто назови."],
+    suggestions: ["Про Менделеева","Про атомы","Про реакции","Расскажи факт"] },
+  { id: "internet", label: "интернет",
+    keywords: ["интернет","сеть","сайт","браузер","поиск","гугл","яндекс","соцсет","социальн сет","тикток","инстаграм","вконтакте","телеграм","мессенджер","wifi","wi-fi","трафик"],
+    facts: ["Первое сообщение по интернету было «LO» — система упала до того, как отправилось «LOGIN».","Более 60% всего интернет-трафика — это видео.","Первые веб-камеры использовались, чтобы следить за кофеваркой в Кембридже.","Интернет передаёт больше данных за час, чем весь 20-й век по телефону."],
+    opinions: ["Интернет — это не место, а способ связи. Но он изменил всё.","Главное в интернете — умение фильтровать, а не находить."],
+    followups: ["Хочешь, расскажу, как работает поиск?"],
+    suggestions: ["Про поиск","Про соцсети","Про WiFi","Расскажи факт"] },
+];
+function detectTopic(lower){
+  let best = null, bestScore = 0;
+  for (const t of TOPICS){
+    let score = 0;
+    for (const kw of t.keywords){
+      if (lower.includes(kw)) score += kw.length;
+    }
+    if (score > bestScore){ bestScore = score; best = t; }
+  }
+  return bestScore >= 3 ? best : null;
+}
+
+/* ============================================================
+   ПАМЯТЬ
+   ============================================================ */
+const profile = loadProfile();
+const memory = {
+  userName: profile.name || null,
+  greeted: false,
+  tone: profile.tone || "formal",
+  lastCity: null,
+  citiesSeen: [],
+  lastExpr: null,
+  lastResult: null,
+  lastWiki: null,
+  lastWikiQuery: null,
+  lastTopicObj: null,
+  state: { topic: null, depth: 0, turnCount: 0, awaiting: null },
+};
+let idleTimer = null;
+let lastActivityAt = Date.now();
+function resetMemory(){
+  memory.lastCity = null; memory.lastExpr = null; memory.lastResult = null;
+  memory.lastWiki = null; memory.lastWikiQuery = null; memory.lastTopicObj = null;
+  memory.citiesSeen = [];
+  memory.state.topic = null; memory.state.depth = 0;
+  memory.state.turnCount = 0; memory.state.awaiting = null;
+}
+function setTopic(t){ memory.state.topic = t; }
+
+/* ============================================================
+   FOLLOW-UP
+   ============================================================ */
+const FOLLOWUP_PATTERNS = [
+  { re: /^(а\s+)?почему\??$/i, kind: "why" },
+  { re: /^(а\s+)?зачем\??$/i, kind: "why" },
+  { re: /^(а\s+)?как\s+это\??$/i, kind: "how" },
+  { re: /^(а\s+)?подробнее\??$/i, kind: "more" },
+  { re: /^(а\s+)?ещё\??$/i, kind: "more" },
+  { re: /^(а\s+)?дальше\??$/i, kind: "more" },
+  { re: /^(расскажи\s+(мне\s+)?больше|ещё\s+расскажи)\??$/i, kind: "more" },
+  { re: /^(а\s+)?а\s+если\??/i, kind: "whatif" },
+  { re: /^(а\s+)?ты\s+как\s+думаешь\??$/i, kind: "opinion" },
+  { re: /^(а\s+)?что\s+ты\s+(думаешь|выберешь|выбрал)\??$/i, kind: "opinion" },
+  { re: /^(а\s+)?и\s+что\??$/i, kind: "so" },
+  { re: /^(дай|подкинь)\s+(ещё\s+)?факт\??$/i, kind: "fact" },
+];
+function classifyFollowUp(t){
+  const s = t.trim().toLowerCase().replace(/ё/g,"е");
+  for (const p of FOLLOWUP_PATTERNS) if (p.re.test(s)) return p.kind;
+  return null;
+}
+function isCorrection(t){ return /(не то|неправильно|неверно|не так|я не про|я не о|не об этом|не про это|ты не понял|не понял|мимо|глупость)/i.test(t); }
+function isThanks(t){ return /(спасибо|благодар|thanks|спс|пасиб|круто|класс|супер|молодец)/i.test(t); }
+
+function detectToneSwitch(t){
+  if (/\b(ты|тебя|тебе|тобой|твой|твоя|твоё|твои)\b/i.test(t) && !/\bвы\b/i.test(t)) memory.tone = "informal";
+  else if (/\b(вы|вас|вам|вами|ваш|ваша|ваше|ваши)\b/i.test(t)) memory.tone = "formal";
+  const p = loadProfile(); p.tone = memory.tone; saveProfile(p);
+}
+function applyTone(text){
+  if (memory.tone === "informal"){
+    return text.replace(/\bВас\b/g,"тебя").replace(/\bвас\b/g,"тебя")
+      .replace(/\bВам\b/g,"тебе").replace(/\bвам\b/g,"тебе")
+      .replace(/\bВаш\b/g,"твой").replace(/\bваш\b/g,"твой")
+      .replace(/\bваша\b/g,"твоя").replace(/\bваше\b/g,"твоё")
+      .replace(/\bваши\b/g,"твои");
+  }
+  return text;
+}
+function topicResponse(topicObj){
+  const fact = pick(topicObj.facts);
+  const opinion = Math.random() < 0.4 ? pick(topicObj.opinions) : null;
+  const followup = Math.random() < 0.35 ? pick(topicObj.followups) : null;
+  const openers = [
+    "О, "+topicObj.label+" — хорошая тема.",
+    "Люблю про "+topicObj.label+".",
+    "Кстати, про "+topicObj.label+" могу сказать вот что.",
+    "Давай про "+topicObj.label+".",
+    "Интересно, что ты об этом заговорил.",
+    "Про "+topicObj.label+" — это ко мне.",
+  ];
+  const parts = [];
+  if (Math.random() < 0.5) parts.push(pick(openers));
+  parts.push(fact);
+  if (opinion) parts.push(opinion);
+  if (followup) parts.push(followup);
+  return parts.join(" ");
+}
+
+/* ============================================================
+   ГЛАВНЫЙ ОБРАБОТЧИК
+   ============================================================ */
+const WEATHER_WORDS = ["погод","температур","дожд","снег","солнечн","облачн","тепл","холодн","ветрен"];
+const RUDE = /(дурак|тупой|тупая|идиот|дебил|кретин|придурок|лох|мудак|мразь|ублюдок|сдохни|заткнись|тупица|дегенерат|бляд|блят|хуй|хуя|пизд|еба|ебан|ебуч|сука|сучк|нахуй|наху|ахуе|охуе|долбоеб|долбоёб|пидор|пидар|гандон|гнида|тварь|шавка)/i;
+
+function botReplySync(raw){
+  let text = raw.trim();
+  const lower = text.toLowerCase().replace(/ё/g,"е");
+  memory.state.turnCount++;
+  detectToneSwitch(text);
+
+  /* ===== 1. ПРИВЕТСТВИЕ ===== */
+  if (/^(привет|здравств|хай|hi|hello|добрый|салют|ку|прив|приветик|доброе\s+утро|добрый\s+день|добрый\s+вечер|здравия желаю|йо|нихао|хеллоу|приветствую|здарова|здорово|здоров)\b/i.test(lower)){
+    setTopic("greet");
+    if (!memory.greeted){
+      memory.greeted = true;
+      return { text: "Привет! Я check. Могу искать информацию, считать примеры, проверять текст, переводить, генерировать картинки и QR, ставить таймеры. С чего начнём?" };
+    }
+    const name = memory.userName ? ", "+memory.userName : "";
+    return { text: noRepeat([
+      "Привет"+name+"! Чем помочь?",
+      "Здравствуй"+name+"! Слушаю.",
+      "Привет"+name+"! Готов считать, искать и болтать.",
+      "Салют"+name+"! Что сегодня на повестке?",
+      "Приветствую"+name+"! О чём поговорим?",
+    ])};
+  }
+
+  /* ===== 2. FOLLOW-UP ===== */
+  const followKind = classifyFollowUp(text);
+  if (followKind && memory.state.topic && memory.state.topic !== "greet"){
+    memory.state.depth++;
+    const r = followUpResponse(followKind);
+    if (r.text) r.text = applyTone(r.text);
+    return r;
+  }
+
+  /* ===== 3. КОРРЕКЦИЯ ===== */
+  if (isCorrection(text)){
+    return { text: pick([
+      "Понял, я промахнулся. Переформулируй — я подстроюсь.",
+      "Виноват. Скажи иначе, и я попробую снова.",
+      "Ясно, не попал. Что именно ты имел в виду?",
+    ])};
+  }
+
+  /* ===== 4. ОЖИДАНИЕ ===== */
+  if (memory.state.awaiting){
+    const a = memory.state.awaiting;
+    if (a.kind === "city"){
+      const c = text.trim().replace(/[?!.]+$/,"");
+      if (c.length >= 2 && c.length <= 40){
+        memory.state.awaiting = null;
+        return { async: "weather", city: c };
+      }
+      memory.state.awaiting = null;
+    }
+  }
+
+  /* ===== 5. @КОМАНДЫ ===== */
+  const cmdMatch = text.match(/^@(teach|wiki|weather|math|gdz|help|fix|img|sum|tr|qr|timer|define|quote)\b\s*(.*)$/i);
+  if (cmdMatch){
+    const cmd = cmdMatch[1].toLowerCase();
+    const rest = cmdMatch[2].trim();
+    if (cmd === "help"){
+      return { text: "Команды:<br><br>"+
+        "<b>@teach</b> — объяснить тему<br>"+
+        "<b>@wiki</b> — поиск знаний<br>"+
+        "<b>@fix</b> — проверить текст<br>"+
+        "<b>@sum</b> — краткое резюме<br>"+
+        "<b>@tr</b> — перевод (ru↔en)<br>"+
+        "<b>@math</b> — математика и физика<br>"+
+        "<b>@img</b> — нарисовать картинку<br>"+
+        "<b>@qr</b> — QR-код из текста<br>"+
+        "<b>@timer</b> — таймер (например, 5м)<br>"+
+        "<b>@define</b> — быстрое определение<br>"+
+        "<b>@quote</b> — цитата<br>"+
+        "<b>@gdz</b> — найти ГДЗ<br>"+
+        "<b>@weather</b> — погода"
+      };
+    }
+    if (cmd === "fix"){
+      if (!rest) return { text: "Напиши текст после @fix." };
+      return { async: "fix", query: rest };
+    }
+    if (cmd === "sum"){
+      if (!rest) return { text: "Напиши текст после @sum — сделаю краткое резюме." };
+      return { async: "summarize", query: rest };
+    }
+    if (cmd === "tr"){
+      if (!rest) return { text: "Напиши текст после @tr. Например: <i>@tr hello world</i>" };
+      // Определяем направление: если кириллица → en, иначе → ru
+      const hasCyr = /[а-яё]/i.test(rest);
+      return { async: "translate", query: rest, from: hasCyr ? "ru" : "en", to: hasCyr ? "en" : "ru" };
+    }
+    if (cmd === "qr"){
+      if (!rest) return { text: "Напиши текст или ссылку после @qr." };
+      return { async: "qr", query: rest };
+    }
+    if (cmd === "timer"){
+      if (!rest) return { text: "Укажи время. Например: <i>@timer 5м</i> или <i>@timer 30с</i>" };
+      const m = rest.match(/(\d+)\s*(с|сек|м|мин|ч|час)/i);
+      if (!m) return { text: "Не понял время. Пример: <i>@timer 5м</i>" };
+      const n = parseInt(m[1]);
+      const unit = m[2].toLowerCase();
+      let secs = n;
+      if (unit.startsWith("м") || unit.startsWith("min")) secs = n * 60;
+      if (unit.startsWith("ч") || unit.startsWith("час")) secs = n * 3600;
+      if (secs > 3600) return { text: "Слишком долго. Максимум — час." };
+      return { async: "timer", seconds: secs, label: n + (unit.startsWith("с") ? " сек" : unit.startsWith("м") ? " мин" : " ч") };
+    }
+    if (cmd === "define"){
+      if (!rest) return { text: "Напиши слово после @define." };
+      return { async: "search", query: rest };
+    }
+    if (cmd === "quote"){
+      return { text: pick(QUOTES) };
+    }
+    if (cmd === "weather"){
+      if (rest) return { async: "weather", city: rest };
+      memory.state.awaiting = { kind: "city" };
+      return { text: "Погоду в каком городе?" + (memory.citiesSeen.length ? " Могу по последним: " + memory.citiesSeen.slice(-3).join(", ") + "." : "") };
+    }
+    if (cmd === "math"){
+      if (rest) return { async: "wolfram", query: rest };
+      return { text: "Напиши выражение. Например: <i>интеграл от x^2</i>" };
+    }
+    if (cmd === "img"){
+      if (!rest) return { text: "Опиши картинку после @img." };
+      return { async: "pollinations_image", query: rest };
+    }
+    if (cmd === "gdz"){
+      const numMatch = text.match(/(?:номер|№|задани[ея]|упражнени[ея]|страница|стр\.?)\s*(\d+)/i);
+      const num = numMatch ? numMatch[1] : null;
+      const gradeMatch = lower.match(/(\d{1,2})\s*класс/i);
+      const grade = gradeMatch ? gradeMatch[1] : null;
+      const subjectMatch = lower.match(/(алгебр|геометр|матем|физик|хими|биологи|русск|литератур|английск|истори|географи|информатик|обществ)/i);
+      const subject = subjectMatch ? subjectMatch[1] : null;
+      const authorCandidates = rest.split(/\s+/).filter(w => /^[А-ЯЁ][а-яё]{3,}$/.test(w) && !["гдз","номер","класс","упражнение","задание","страница"].includes(w.toLowerCase()));
+      const author = authorCandidates.length ? authorCandidates[0] : null;
+      if (!num && !subject){
+        return { text: "Напиши хотя бы предмет или номер. Например: <i>@gdz алгебра 7 класс Макарычев номер 96</i>" };
+      }
+      return { async: "gdz", query: { num, grade, subject, author } };
+    }
+    if (cmd === "teach" || cmd === "wiki"){
+      if (!rest) return { text: "Напиши запрос. Например: @"+cmd+" что такое фотосинтез" };
+      memory.lastWikiQuery = rest;
+      return { async: "search", query: rest, full: cmd === "teach" };
+    }
+  }
+
+  /* ===== 6. ГРУБОСТЬ ===== */
+  if (RUDE.test(lower)){
+    return { text: noRepeat([
+      "Понимаю, что могу ошибаться, но грубость делу не поможет. Давай по существу?",
+      "Спокойно. Я здесь, чтобы помогать.",
+      "Я не идеален, согласен. Но без оскорблений будет продуктивнее.",
+    ])};
+  }
+
+  /* ===== 7. КРИТИКА / ИЗВИНЕНИЯ ===== */
+  if (/(ты плохо|ты глуп|ты не понимаешь|ты бесполезен|ты ужасен|фигня|бред|чушь|ты не прав)/i.test(lower)){
+    return { text: noRepeat(["Принял замечание. Уточни, что было не так.","Спасибо за обратную связь. Скажи, где именно."]) };
+  }
+  if (/(извини|прости|сорри|сори)/i.test(lower)){
+    return { text: pick(["Ничего страшного, бывает. Чем помочь?","Всё в порядке! Продолжим?"]) };
+  }
+
+  /* ===== 8. МАЛЫЙ TALK ===== */
+  if (/(как дела|как ты|как жизнь|как настроение|как сам|чё как|как поживаешь|как оно)/i.test(lower)){
+    setTopic("smalltalk");
+    return { text: noRepeat([
+      "У меня всё отлично — я же программа. А у тебя как?",
+      "Хорошо! Общаюсь с интересным человеком. А ты?",
+      "Работаю в лучшем виде. А у тебя что нового?",
+    ])};
+  }
+  if (/(чем занимаешься|что делаешь|ты тут|ау|есть кто|ты здесь|ты где)/i.test(lower)){
+    setTopic("smalltalk");
+    return { text: noRepeat([
+      "Отвечаю на вопросы, ищу информацию, считаю примеры. А ты чем занят?",
+      "Читаю твой запрос и думаю, чем помочь. Что у тебя на уме?",
+    ])};
+  }
+  if (/(скучно|тоска|нечего делать)/i.test(lower)){
+    return { text: noRepeat([
+      "Скучно? Могу рассказать факт, шутку или определение. Что выберешь?",
+      "Давай развлечёмся: спроси «расскажи факт» или «расскажи шутку».",
+    ])};
+  }
+
+  /* ===== 9. О СЕБЕ ===== */
+  if (/(кто ты|ты кто|что ты такое|ты человек|ты робот|ты бот|ты живой|ты настоящий|ты ии)/i.test(lower)){
+    return { text: "Я — check, быстрый российский искусственный интеллект, работаю прямо в браузере. Умею искать информацию, рассказывать погоду, считать примеры, проверять текст, переводить, генерировать картинки и QR, ставить таймеры." };
+  }
+  if (/(как тебя зовут|твое имя|твоё имя|как звать)/i.test(lower)){
+    return { text: "Меня зовут check." };
+  }
+  if (/(что ты умеешь|помощь|help|команды|что можешь|твои возможности)/i.test(lower)){
+    return { text: "Я умею:<br><br>"+
+      "• Погода: «погода в Краснодаре»<br>"+
+      "• Определения: «что такое груша»<br>"+
+      "• Математика: 12*8+4, √16, 5!, sin(30)<br>"+
+      "• Сложная математика и физика: @math<br>"+
+      "• Проверка текста: @fix<br>"+
+      "• Резюме: @sum<br>"+
+      "• Перевод: @tr<br>"+
+      "• QR-код: @qr<br>"+
+      "• Таймер: @timer 5м<br>"+
+      "• ГДЗ: @gdz алгебра 7 класс номер 96<br>"+
+      "• Картинки: @img кот в космосе<br>"+
+      "• Шутки, факты, цитаты<br>"+
+      "• OCR с фото (кнопка «+»)<br><br>"+
+      "Команды: @teach, @wiki, @fix, @sum, @tr, @math, @img, @qr, @timer, @gdz, @weather, @help"
+    };
+  }
+
+  /* ===== 10. ЗНАКОМСТВО ===== */
+  let m = lower.match(/меня зовут\s+([а-яёa-z\-]+)/i);
+  if (m){
+    memory.userName = m[1].charAt(0).toUpperCase()+m[1].slice(1);
+    const p = loadProfile(); p.name = memory.userName; saveProfile(p);
+    return { text: pick(["Приятно познакомиться, "+memory.userName+"!","Очень приятно, "+memory.userName+"!"]) };
+  }
+
+  /* ===== 11. ГДЗ ===== */
+  const isGdz = /(гдз|решебник|домашк|домашн|д\/з|дз|реши\s+номер|помоги\s+с\s+номером|номер\s+\d+|упражнени[ея]\s+\d+|задани[ея]\s+\d+)/i.test(lower);
+  if (isGdz){
+    const numMatch = text.match(/(?:номер|№|задани[ея]|упражнени[ея]|страница|стр\.?)\s*(\d+)/i);
+    const num = numMatch ? numMatch[1] : null;
+    const gradeMatch = lower.match(/(\d{1,2})\s*класс/i);
+    const grade = gradeMatch ? gradeMatch[1] : null;
+    const subjectMatch = lower.match(/(алгебр|геометр|матем|физик|хими|биологи|русск|литератур|английск|истори|географи|информатик|обществ)/i);
+    const subject = subjectMatch ? subjectMatch[1] : null;
+    const authorCandidates = text.split(/\s+/).filter(w => /^[А-ЯЁ][а-яё]{3,}$/.test(w) && !["гдз","номер","класс","упражнение","задание","страница"].includes(w.toLowerCase()));
+    const author = authorCandidates.length ? authorCandidates[0] : null;
+    if (!num && !subject){
+      return { text: "Уточни предмет или номер. Например: <i>гдз алгебра 7 класс Макарычев номер 96</i>" };
+    }
+    return { async: "gdz", query: { num, grade, subject, author } };
+  }
+
+  /* ===== 12. ПЕРЕВОД (без @) ===== */
+  if (/^(переведи|перевод)\s+/i.test(lower)){
+    const rest = text.replace(/^(переведи|перевод)\s+/i, "").trim();
+    const hasCyr = /[а-яё]/i.test(rest);
+    return { async: "translate", query: rest, from: hasCyr ? "ru" : "en", to: hasCyr ? "en" : "ru" };
+  }
+
+  /* ===== 13. РЕЗЮМЕ (без @) ===== */
+  if (/^(сократи|резюме|кратко)\s+/i.test(lower) && text.length > 30){
+    const rest = text.replace(/^(сократи|резюме|кратко)\s+/i, "").trim();
+    return { async: "summarize", query: rest };
+  }
+
+  /* ===== 14. МАТЕМАТИКА (локально) ===== */
+  m = lower.match(/(\d+\.?\d*)\s*%\s*(от|of)\s*(\d+\.?\d*)/);
+  if (m){
+    const p = parseFloat(m[1]), n = parseFloat(m[3]);
+    return { text: fmt(p)+"% от "+fmt(n)+" = "+fmt(p*n/100)+"." };
+  }
+  m = lower.match(/√\s*(\d+\.?\d*)/);
+  if (m){ return { text: "√"+m[1]+" = "+fmt(Math.sqrt(parseFloat(m[1]))) }; }
+  m = lower.match(/корень\s+(?:из\s+)?(\d+\.?\d*)/i);
+  if (m){ return { text: "Корень из "+m[1]+" = "+fmt(Math.sqrt(parseFloat(m[1]))) }; }
+  m = lower.match(/(\d+)\s*!/);
+  if (m){
+    const n = parseInt(m[1]);
+    if (n > 170) return { text: "Слишком большое." };
+    let r = 1; for (let i=2;i<=n;i++) r *= i;
+    return { text: n+"! = "+r };
+  }
+  m = lower.match(/(sin|cos|tg|tan|log|ln)\s*\(?\s*(\d+\.?\d*)\s*\)?/i);
+  if (m){
+    const fn = m[1].toLowerCase(), x = parseFloat(m[2]);
+    let r;
+    if (fn==="sin") r = Math.sin(x*Math.PI/180);
+    else if (fn==="cos") r = Math.cos(x*Math.PI/180);
+    else if (fn==="tg" || fn==="tan") r = Math.tan(x*Math.PI/180);
+    else if (fn==="log") r = Math.log10(x);
+    else r = Math.log(x);
+    return { text: fn+"("+x+") = "+fmt(+r.toFixed(6)) };
+  }
+  if (/(сколько|чему)\s*(равно|равен)?\s*(пи|π)/i.test(lower)){ return { text: "π ≈ 3.141592653589793…" }; }
+
+  /* ===== 15. ДРОБИ ===== */
+  const fracResult = parseFractionExpression(text);
+  if (fracResult){
+    const { num, den } = fracResult;
+    const numStr = num < 0 ? "-"+Math.abs(num) : num;
+    if (den === 1) return { text: formatFractions("Результат: "+num) };
+    const fracHtml = '<span class="fraction"><span class="num">'+numStr+'</span><span class="den">'+den+'</span></span>';
+    return { text: "Результат: "+fracHtml };
+  }
+
+  /* ===== 16. КОНВЕРТАЦИЯ ===== */
+  m = lower.match(/(\d+\.?\d*)\s*(км|м|см|кг|г|°c|c|°f|f|долл[а-я]*|usd|евро|eur|рубл[а-я]*|rub)\s*(в|to)\s*([а-яa-z°]+)/i);
+  if (m){
+    const conv = convert(parseFloat(m[1]), m[2], m[4]);
+    if (conv) return { text: conv };
+  }
+
+  /* ===== 17. ВРЕМЯ / ДАТА ===== */
+  if (/(который час|сколько времени|время сейчас)/i.test(lower)){
+    const d = new Date();
+    return { text: "Сейчас "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+"." };
+  }
+  if (/(какое сегодня число|какая дата|какой сегодня день|дата сегодня|какой день недели|какое число)/i.test(lower)){
+    const d = new Date();
+    const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+    const days = ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+    return { text: "Сегодня "+d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear()+", "+days[d.getDay()]+"." };
+  }
+
+  /* ===== 18. ШУТКИ / ФАКТЫ / ЦИТАТЫ ===== */
+  if (/(шутк|анекдот|рассмеши|пошути|смешн)/i.test(lower)){ return { text: noRepeat(JOKES) }; }
+  if (/(факт|интересное|расскажи что-нибудь|удиви)/i.test(lower)){ return { text: noRepeat(FACTS) }; }
+  if (/(цитат|мотивир|вдохнови)/i.test(lower)){ return { text: noRepeat(QUOTES) }; }
+
+  /* ===== 19. БЛАГОДАРНОСТЬ / ПРОЩАНИЕ ===== */
+  if (isThanks(text)){
+    const name = memory.userName ? ", "+memory.userName : "";
+    return { text: noRepeat(["Пожалуйста"+name+"!","Всегда пожалуйста"+name+"!","Обращайся"+name+"!"]) };
+  }
+  if (/(пока|до свидания|прощай|bye|до встречи|спокойной ночи)/i.test(lower)){
+    const name = memory.userName ? ", "+memory.userName : "";
+    return { text: noRepeat(["До встречи"+name+"!","Пока"+name+"! Было приятно."]) };
+  }
+
+  /* ===== 20. ЭМОЦИИ ===== */
+  if (/(мне грустно|грустно|плохо|печаль|тоскливо|депресс|тяжело|не могу больше)/i.test(lower)){
+    return { text: noRepeat([
+      "Слышу. Иногда правда тяжело. Хочешь расскажешь, что случилось?",
+      "Понимаю. Я рядом. Можем просто поговорить — или я подкину что-то интересное.",
+    ])};
+  }
+  if (/(мне весело|хорошее настроение|у меня отлично|я счастлив|я рад|класс)/i.test(lower)){
+    return { text: noRepeat(["Отлично! Рад за тебя.","Круто! Что хорошего случилось?"]) };
+  }
+
+  /* ===== 21. ПОГОДА ===== */
+  if (WEATHER_WORDS.some(w=>lower.includes(w))){
+    const city = extractCity(text);
+    if (city) return { async: "weather", city };
+    memory.state.awaiting = { kind: "city" };
+    const hint = memory.citiesSeen.length ? " Могу по последним: " + memory.citiesSeen.slice(-3).join(", ") + "." : "";
+    return { text: "Погоду в каком городе?" + hint };
+  }
+
+  /* ===== 22. ПРОСТАЯ МАТЕМАТИКА ===== */
+  const mathExpr = extractMath(text);
+  if (mathExpr && /[+\-*/^%]/.test(mathExpr)){
+    const val = safeMath(mathExpr);
+    if (val !== null){
+      memory.lastExpr = mathExpr; memory.lastResult = val;
+      const opener = pick(["Посчитал: ","Получается: ","Вот результат: ","Итого: ",""]);
+      return { text: opener + mathExpr + " = " + fmt(val) + "." };
+    }
+  }
+
+  /* ===== 23. ГЕНЕРАЦИЯ КАРТИНОК ===== */
+  if (/(нарисуй|сгенерируй|создай|сделай|покажи)\s+(картинк|изображени|фото|рисунок|арт|постер)/i.test(lower)){
+    const prompt = text.replace(/^(нарисуй|сгенерируй|создай|сделай|покажи)\s+(картинк[уи]?|изображени[ея]?|фото|рисунок|арт|постер)\s*/i, "").trim();
+    return { async: "pollinations_image", query: prompt || "красивый пейзаж" };
+  }
+
+  /* ===== 24. QR-КОД ===== */
+  if (/^(сделай|создай|сгенерируй)\s+qr/i.test(lower)){
+    const rest = text.replace(/^(сделай|создай|сгенерируй)\s+qr(-код)?\s*/i, "").trim();
+    if (rest) return { async: "qr", query: rest };
+    return { text: "Напиши текст для QR-кода. Например: <i>@qr https://example.com</i>" };
+  }
+
+  /* ===== 25. ТАЙМЕР ===== */
+  if (/^(таймер|поставь таймер|засеки)\s*/i.test(lower)){
+    const rest = text.replace(/^(таймер|поставь таймер|засеки)\s*/i, "");
+    const m = rest.match(/(\d+)\s*(с|сек|м|мин|ч|час)/i);
+    if (!m) return { text: "Укажи время. Например: <i>@timer 5м</i>" };
+    const n = parseInt(m[1]);
+    const unit = m[2].toLowerCase();
+    let secs = n;
+    if (unit.startsWith("м") || unit.startsWith("min")) secs = n * 60;
+    if (unit.startsWith("ч") || unit.startsWith("час")) secs = n * 3600;
+    if (secs > 3600) return { text: "Слишком долго." };
+    return { async: "timer", seconds: secs, label: n + (unit.startsWith("с") ? " сек" : unit.startsWith("м") ? " мин" : " ч") };
+  }
+
+  /* ===== 26. СЛОЖНАЯ МАТЕМАТИКА / ФИЗИКА ===== */
+  if (/(интеграл|производн|уравнени|матриц|предел|дифференц|система уравнени|доказать тождество)/i.test(lower)){
+    return { async: "wolfram", query: text };
+  }
+  if (/(закон ньютон|закон ом|ускорени|сила тяжест|работа силы|импульс тела)/i.test(lower)){
+    return { async: "wolfram", query: text };
+  }
+
+  /* ===== 27. ПОИСК ЗНАНИЙ ===== */
+  const searchMatch = text.match(/(?:что такое|кто такой|кто такая|кто такие|расскажи про|расскажи о|расскажи об|объясни|объясните|поясни|растолкуй|что значит|определение|что означает|что за|в чём смысл|в чем смысл|найди|поищи|загугли)\s+(.+?)[?!.]*$/i);
+  let searchQuery = null;
+  if (searchMatch) searchQuery = searchMatch[1].trim();
+  else if (/(война|революц|битв|сражен|древн|средневек|импери|династ|эпох|античн|ренессанс|просвещен|феодал)/i.test(lower)){
+    searchQuery = text.replace(/[?!.]+$/,"").trim();
+  }
+  if (searchQuery && searchQuery.length >= 2 && searchQuery.length <= 100){
+    memory.lastWikiQuery = searchQuery;
+    return { async: "search", query: searchQuery };
+  }
+
+  /* ===== 28. ЛОКАЛЬНЫЕ ТЕМЫ ===== */
+  const topicObj = detectTopic(lower);
+  if (topicObj){
+    memory.lastTopicObj = topicObj;
+    memory.state.topic = "topic:"+topicObj.id;
+    return { text: topicResponse(topicObj), chips: topicObj.suggestions };
+  }
+
+  /* ===== 29. СЛОЖНЫЙ ВОПРОС ===== */
+  if (
+    text.length > 25 &&
+    /(объясни|расскажи|почему|как работает|что будет если|предскажи|придумай|сочини|опиши|приведи пример|докажи|сравни|разбери)/i.test(lower) &&
+    !/(погод|температур|дожд|снег)/i.test(lower) &&
+    !/(что такое|кто такой|кто такая|определение)/i.test(lower) &&
+    !/(гдз|номер|упражнени|задани)/i.test(lower)
+  ){
+    return { async: "pollinations_text", query: text };
+  }
+
+  /* ===== 30. ГОРОД ОДНИМ СЛОВОМ ===== */
+  if (looksLikeCity(text)) return { async: "weather", city: text.trim() };
+
+  /* ===== 31. ОБЩИЙ РАЗГОВОР ===== */
+  const words = text.replace(/[?!.,;:]/g,"").split(/\s+/).filter(w => w.length >= 4);
+  if (words.length >= 1){
+    const anchor = words[Math.floor(Math.random()*words.length)];
+    return { text: pick([
+      "Интересно, что ты заговорил про «"+anchor+"». Расскажи подробнее.",
+      "«"+anchor+"» — любопытно. Давай разберём?",
+      "Могу поискать «"+anchor+"» — скажи «найди "+anchor+"».",
+    ])};
+  }
+  return { text: noRepeat([
+    "Расскажи чуть подробнее — я подстроюсь.",
+    "Хм, давай разберёмся. Что именно тебя интересует?",
+    "Могу поговорить на разные темы — просто скажи, куда копать.",
+  ])};
+}
+
+function followUpResponse(kind){
+  const topicObj = memory.lastTopicObj;
+  if (topicObj){
+    if (kind === "more" || kind === "fact") return { text: pick(topicObj.facts), chips: topicObj.suggestions };
+    if (kind === "why") return { text: pick(["По сути — так устроено. "+pick(topicObj.facts),"Хороший вопрос. "+pick(topicObj.opinions)]) };
+    if (kind === "how") return { text: "Если коротко — это работает по своим правилам. "+pick(topicObj.facts) };
+    if (kind === "opinion" || kind === "choice") return { text: pick(topicObj.opinions) };
+    if (kind === "whatif") return { text: "Тогда, скорее всего, всё было бы иначе." };
+    if (kind === "so") return { text: "Вот такой расклад. Копнём глубже или сменим тему?" };
+  }
+  if (kind === "why") return { text: "Если коротко — так сложилось. Хочешь разберём подробнее?" };
+  if (kind === "how") return { text: "Могу объяснить по шагам — уточни, что разобрать." };
+  if (kind === "more" || kind === "fact") return { text: noRepeat(FACTS) };
+  if (kind === "whatif") return { text: "Зависит от условий. Опиши ситуацию — прикинем." };
+  if (kind === "opinion" || kind === "choice") return { text: "Я программа, но могу сравнить варианты. Что сравниваем?" };
+  if (kind === "so") return { text: "Вот такой расклад. Что дальше?" };
+  return { text: "Уточни — я не до конца понял." };
+}
+
+function extractCity(text){
+  let m = text.match(/\bв[о]?\s+([А-ЯЁа-яё][а-яё\-]+)/i);
+  if (m) return m[1];
+  m = text.match(/погода\s+([А-ЯЁа-яё][а-яё\-]+)/i);
+  if (m) return m[1];
+  const words = text.replace(/[?!.,]/g,"").split(/\s+/);
+  for (const w of words){ if (WEATHER_DB[resolveCity(w)]) return w; }
+  return null;
+}
+function looksLikeCity(text){
+  const t = text.trim().replace(/[?!.]+$/,"");
+  if (!/^[А-ЯЁа-яё][а-яё\-]{2,25}$/i.test(t)) return false;
+  const stop = ["привет","пока","спасибо","пожалуйста","да","нет","ок","хорошо","плохо","скучно"];
+  return !stop.includes(t.toLowerCase());
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const homeScreen   = document.getElementById("home-screen");
+const chatScreen   = document.getElementById("chat-screen");
+const chatsContainer = document.getElementById("chats-container");
+const backBtn      = document.getElementById("back-btn");
+const newChatBtn   = document.getElementById("new-chat");
+const fabNew       = document.getElementById("fab-new");
+const fabSearch    = document.getElementById("fab-search");
+const menuBtn      = document.getElementById("menu-btn");
+const themeBtn     = document.getElementById("theme-btn");
+const searchPanel  = document.getElementById("search-panel");
+const searchInput  = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+const searchClose  = document.getElementById("search-close");
+const chatTitleEl  = document.getElementById("chat-title");
+const messagesEl   = document.getElementById("messages");
+const welcomeEl    = document.getElementById("welcome");
+const welcomeChips = document.getElementById("welcome-chips");
+const inputEl      = document.getElementById("input");
+const sendBtn      = document.getElementById("send");
+const plusBtn      = document.getElementById("plus-btn");
+const atBtn        = document.getElementById("at-btn");
+const micBtn       = document.getElementById("mic-btn");
+const screenEl     = document.getElementById("screen");
+const cmdPanel     = document.getElementById("cmd-panel");
+const fileInput    = document.getElementById("file-input");
+const charCounter  = document.getElementById("char-counter");
+
+let currentChatId = null;
+let isStreaming = false;
+let streamTimer = null;
+let abortStream = false;
+
+const WELCOME_ACTIONS = [
+  "Расскажи факт",
+  "Что такое фотосинтез",
+  "Погода в Москве",
+  "12*8+4",
+  "Про космос",
+  "Сделай QR на https://ya.ru",
+];
+
+function renderWelcomeChips(){
+  welcomeChips.innerHTML = "";
+  WELCOME_ACTIONS.forEach(action => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.innerHTML = ICONS.sparkles + '<span>' + escapeHtml(action) + '</span>';
+    b.addEventListener("click", ()=>{
+      inputEl.value = action;
+      inputEl.dispatchEvent(new Event("input"));
+      send();
+    });
+    welcomeChips.appendChild(b);
+  });
+}
+
+function renderHome(){
+  const chats = loadChats();
+  if (!chats.length){
+    chatsContainer.innerHTML = `<div style="text-align:center; padding:60px 20px; color:var(--text-mute); font-size:14px;">
+      Нет сохранённых чатов.<br>Нажмите <b>+</b>, чтобы начать.
+    </div>`;
+    return;
+  }
+  chats.sort((a,b)=>b.updatedAt - a.updatedAt);
+  const groups = {};
+  chats.forEach(c => {
+    const key = dateLabel(c.updatedAt);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  });
+  let html = "";
+  Object.keys(groups).forEach(label => {
+    html += '<div class="date-group">';
+    html += '<div class="date-label">'+escapeHtml(label)+'</div>';
+    html += '<div class="chats-grid">';
+    groups[label].forEach(chat => {
+      html += '<div class="chat-card" data-id="'+chat.id+'">'+
+        '<div class="card-body">'+
+        '<div class="card-title">'+escapeHtml(chat.title)+'</div>'+
+        '<div class="card-preview">'+escapeHtml(chat.preview || "Нет сообщений")+'</div>'+
+        '</div></div>';
+    });
+    html += '</div></div>';
+  });
+  chatsContainer.innerHTML = html;
+
+  chatsContainer.querySelectorAll(".chat-card").forEach(card => {
+    let pressTimer = null;
+    let longPressed = false;
+    card.addEventListener("click", ()=>{
+      if (longPressed){ longPressed = false; return; }
+      openChat(card.dataset.id);
+    });
+    const startPress = ()=>{
+      longPressed = false;
+      pressTimer = setTimeout(()=>{
+        longPressed = true;
+        if (navigator.vibrate) navigator.vibrate(15);
+        showCtxMenu(card.dataset.id);
+      }, 500);
+    };
+    const cancelPress = ()=>{
+      if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    };
+    card.addEventListener("touchstart", startPress, { passive: true });
+    card.addEventListener("touchend", cancelPress);
+    card.addEventListener("touchcancel", cancelPress);
+    card.addEventListener("touchmove", cancelPress);
+    card.addEventListener("mousedown", startPress);
+    card.addEventListener("mouseup", cancelPress);
+    card.addEventListener("mouseleave", cancelPress);
+  });
+}
+
+function showCtxMenu(chatId){
+  const chat = getChat(chatId);
+  if (!chat) return;
+  const overlay = document.createElement("div");
+  overlay.className = "ctx-overlay visible";
+  overlay.id = "ctx-overlay";
+  overlay.innerHTML = `
+    <div class="ctx-menu glass">
+      <div class="ctx-title">${escapeHtml(chat.title)}</div>
+      <div class="ctx-item" data-action="rename">${ICONS.pencil}<span>Переименовать</span></div>
+      <div class="ctx-item" data-action="export">${ICONS.download}<span>Экспорт JSON</span></div>
+      <div class="ctx-item" data-action="export-md">${ICONS.share}<span>Экспорт Markdown</span></div>
+      <div class="ctx-item" data-action="import">${ICONS.download}<span>Импортировать</span></div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" data-action="delete">${ICONS.trash}<span>Удалить</span></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e)=>{ if (e.target === overlay) closeCtxMenu(); });
+  overlay.querySelectorAll(".ctx-item").forEach(item => {
+    item.addEventListener("click", ()=>{
+      const action = item.dataset.action;
+      closeCtxMenu();
+      setTimeout(()=> handleCtxAction(action, chatId), 100);
+    });
+  });
+}
+function closeCtxMenu(){
+  const el = document.getElementById("ctx-overlay");
+  if (el) el.remove();
+}
+function downloadFile(content, name, type){
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function chatToMarkdown(chat){
+  let md = "# " + chat.title + "\n\n";
+  md += "*Создано: " + new Date(chat.createdAt).toLocaleString("ru") + "*\n\n---\n\n";
+  chat.messages.forEach(m => {
+    const who = m.who === "user" ? "**Вы**" : "**check**";
+    const text = m.text.replace(/<[^>]+>/g, "").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+    md += who + ":\n\n" + text + "\n\n---\n\n";
+  });
+  return md;
+}
+function handleCtxAction(action, chatId){
+  const chat = getChat(chatId);
+  if (!chat) return;
+  if (action === "delete"){
+    if (confirm("Удалить чат «"+chat.title+"»?")){
+      deleteChat(chatId);
+      renderHome();
+      if (currentChatId === chatId) goHome();
+    }
+    return;
+  }
+  if (action === "rename"){
+    const newName = prompt("Новое название:", chat.title);
+    if (newName && newName.trim()){
+      updateChat(chatId, { title: newName.trim() });
+      renderHome();
+      if (currentChatId === chatId) chatTitleEl.textContent = newName.trim();
+    }
+    return;
+  }
+  if (action === "export"){
+    try {
+      const data = JSON.stringify(chat, null, 2);
+      const safeName = (chat.title || "chat").replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "_");
+      downloadFile(data, safeName + ".json", "application/json");
+      showToast("Чат экспортирован");
+    } catch(err) { alert("Ошибка: " + err.message); }
+    return;
+  }
+  if (action === "export-md"){
+    try {
+      const md = chatToMarkdown(chat);
+      const safeName = (chat.title || "chat").replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "_");
+      downloadFile(md, safeName + ".md", "text/markdown");
+      showToast("Markdown сохранён");
+    } catch(err) { alert("Ошибка: " + err.message); }
+    return;
+  }
+  if (action === "import"){
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = ".json,application/json";
+    input.style.display = "none";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (imported && Array.isArray(imported.messages)){
+            imported.id = "chat_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+            imported.title = imported.title || "Импортированный чат";
+            imported.preview = imported.preview || "";
+            imported.createdAt = imported.createdAt || Date.now();
+            imported.updatedAt = Date.now();
+            const chats = loadChats();
+            chats.unshift(imported);
+            saveChats(chats);
+            renderHome();
+            showToast("Чат импортирован");
+          } else alert("Неверный формат");
+        } catch (err) { alert("Ошибка: " + err.message); }
+      };
+      reader.readAsText(file);
+    };
+    document.body.appendChild(input); input.click(); document.body.removeChild(input);
+    return;
+  }
+}
+
+/* Поиск */
+function openSearch(){
+  searchPanel.classList.add("visible");
+  searchInput.value = "";
+  renderSearchResults("");
+  setTimeout(()=> searchInput.focus(), 100);
+}
+function closeSearch(){ searchPanel.classList.remove("visible"); }
+function renderSearchResults(query){
+  const chats = loadChats();
+  const q = query.trim().toLowerCase();
+  if (!q){
+    searchResults.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-mute);font-size:14px;">Начни печатать для поиска</div>';
+    return;
+  }
+  const matches = [];
+  chats.forEach(c => {
+    if (c.title.toLowerCase().includes(q)){
+      matches.push({ chat: c, where: "title" });
+    } else {
+      const found = c.messages.find(m => m.text.replace(/<[^>]+>/g,"").toLowerCase().includes(q));
+      if (found) matches.push({ chat: c, where: "msg", msg: found.text.replace(/<[^>]+>/g,"") });
+    }
+  });
+  if (!matches.length){
+    searchResults.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-mute);font-size:14px;">Ничего не найдено</div>';
+    return;
+  }
+  searchResults.innerHTML = "";
+  matches.slice(0, 30).forEach(m => {
+    const el = document.createElement("div");
+    el.className = "search-item";
+    const title = m.chat.title.replace(new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"), "<mark>$1</mark>");
+    const preview = (m.msg || m.chat.preview || "").slice(0, 120);
+    el.innerHTML = '<div class="si-title">'+title+'</div><div class="si-preview">'+escapeHtml(preview)+'</div>';
+    el.addEventListener("click", ()=>{
+      closeSearch();
+      openChat(m.chat.id);
+    });
+    searchResults.appendChild(el);
+  });
+}
+
+function openChat(id){
+  const chat = getChat(id);
+  if (!chat) return;
+  currentChatId = id;
+  localStorage.setItem(CURRENT_KEY, id);
+  chatTitleEl.textContent = chat.title;
+  messagesEl.innerHTML = "";
+  welcomeEl.style.display = chat.messages.length ? "none" : "flex";
+  chat.messages.forEach(msg=>{
+    const d = document.createElement("div");
+    d.className = "msg " + msg.who;
+    if (msg.who === "bot") d.innerHTML = msg.text;
+    else d.textContent = msg.text;
+    if (msg.who === "bot"){
+      d.addEventListener("click", (e)=>{
+        if (e.target.tagName === "A" || e.target.closest("button")) return;
+        copyToClipboard(msg.text.replace(/<[^>]+>/g,""));
+      });
+    }
+    messagesEl.appendChild(d);
+  });
+  homeScreen.classList.add("hidden");
+  chatScreen.classList.remove("hidden");
+  scrollBottom();
+  scheduleIdleCheck();
+}
+
+function startNewChat(){
+  const chat = createChat();
+  currentChatId = chat.id;
+  localStorage.setItem(CURRENT_KEY, chat.id);
+  chatTitleEl.textContent = chat.title;
+  messagesEl.innerHTML = "";
+  welcomeEl.style.display = "flex";
+  resetMemory();
+  homeScreen.classList.add("hidden");
+  chatScreen.classList.remove("hidden");
+  updateSendBtn();
+  inputEl.focus();
+  renderHome();
+  scheduleIdleCheck();
+}
+
+function goHome(){
+  homeScreen.classList.remove("hidden");
+  chatScreen.classList.add("hidden");
+  currentChatId = null;
+  localStorage.removeItem(CURRENT_KEY);
+  renderHome();
+  if (idleTimer){ clearTimeout(idleTimer); idleTimer = null; }
+}
+
+function persistMessage(who, text){
+  if (!currentChatId) return;
+  const chat = getChat(currentChatId);
+  if (!chat) return;
+  chat.messages.push({ who, text, ts: Date.now() });
+  if (who === "user" && chat.messages.filter(m=>m.who==="user").length === 1){
+    chat.title = generateTitle(text);
+    chatTitleEl.textContent = chat.title;
+  }
+  const lastBot = [...chat.messages].reverse().find(m=>m.who==="bot");
+  if (lastBot) chat.preview = lastBot.text.replace(/<[^>]+>/g,"").slice(0, 100);
+  else chat.preview = text.replace(/<[^>]+>/g,"").slice(0, 100);
+  updateChat(currentChatId, chat);
+  renderHome();
+}
+
+function updatePreviewFromLastBot(){
+  if (!currentChatId) return;
+  const chat = getChat(currentChatId);
+  if (!chat) return;
+  const lastBot = [...chat.messages].reverse().find(m=>m.who==="bot");
+  if (lastBot){
+    chat.preview = lastBot.text.replace(/<[^>]+>/g,"").slice(0, 100);
+    updateChat(currentChatId, chat);
+    renderHome();
+  }
+}
+
+function updateSendBtn(){
+  if (isStreaming){
+    sendBtn.classList.add("visible","stop");
+    sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  } else if (inputEl.value.trim()){
+    sendBtn.classList.add("visible");
+    sendBtn.classList.remove("stop");
+    sendBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+  } else sendBtn.classList.remove("visible","stop");
+}
+
+function scrollBottom(){ screenEl.scrollTop = screenEl.scrollHeight; }
+
+function addMsg(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  if (who === "bot") d.innerHTML = text;
+  else d.textContent = text;
+  if (who === "bot"){
+    d.addEventListener("click", (e)=>{
+      if (e.target.tagName === "A" || e.target.closest("button")) return;
+      copyToClipboard(d.innerText);
+    });
+  }
+  messagesEl.appendChild(d);
+  scrollBottom();
+  return d;
+}
+function addStatus(text, iconSvg){
+  const d = document.createElement("div");
+  d.className = "status-line";
+  d.innerHTML = (iconSvg||"") + '<span class="spin"></span>' + text;
+  messagesEl.appendChild(d);
+  scrollBottom();
+  return d;
+}
+function showTypingIndicator(){
+  const d = document.createElement("div");
+  d.className = "msg bot";
+  d.id = "typing";
+  d.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  messagesEl.appendChild(d);
+  scrollBottom();
+}
+function hideTypingIndicator(){
+  const t = document.getElementById("typing");
+  if (t) t.remove();
+}
+
+function copyToClipboard(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=> showToast("Скопировано")).catch(()=>{});
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); showToast("Скопировано"); } catch {}
+    document.body.removeChild(ta);
+  }
+}
+
+function streamText(el, fullText, done){
+  el.dataset.full = fullText;
+  el.dataset.streaming = "1";
+  el.textContent = "";
+  isStreaming = true;
+  updateSendBtn();
+  abortStream = false;
+  const tokens = [];
+  const re = /(<[^>]+>|[\s\S])/g;
+  let m;
+  while ((m = re.exec(fullText))) tokens.push(m[1]);
+  const cursor = document.createElement("span");
+  cursor.className = "cursor";
+  el.appendChild(cursor);
+  const plainLen = fullText.replace(/<[^>]+>/g,"").length;
+  const speed = plainLen > 200 ? 14 : (plainLen > 80 ? 20 : 28);
+  let i = 0;
+  streamTimer = setInterval(()=>{
+    if (abortStream){ clearInterval(streamTimer); streamTimer = null; return; }
+    const step = plainLen > 200 ? 4 : (plainLen > 80 ? 2 : 1);
+    let emitted = 0;
+    while (i < tokens.length && emitted < step){
+      const tk = tokens[i++];
+      if (/^</.test(tk)){
+        const span = document.createElement("span");
+        span.innerHTML = tk;
+        while (span.firstChild) el.insertBefore(span.firstChild, cursor);
+      } else { cursor.insertAdjacentText("beforebegin", tk); emitted++; }
+    }
+    scrollBottom();
+    if (i >= tokens.length){
+      clearInterval(streamTimer); streamTimer = null;
+      cursor.remove();
+      el.innerHTML = fullText;
+      el.dataset.streaming = "0";
+      isStreaming = false;
+      updateSendBtn();
+      scrollBottom();
+      if (done) done();
+    }
+  }, speed);
+}
+
+function attachChips(msgEl, chips, onChip){
+  const row = document.createElement("div");
+  row.className = "chips-row";
+  chips.forEach(label => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.innerHTML = ICONS.sparkles + '<span>'+escapeHtml(label)+'</span>';
+    b.addEventListener("click", ()=> onChip(label));
+    row.appendChild(b);
+  });
+  msgEl.appendChild(row);
+}
+
+function attachAliceButton(msgEl, query){
+  let cleanQuery = String(query)
+    .replace(/^@\w+\s*/i, "")
+    .replace(/^(найди|поищи|загугли|подскажи|помоги|спроси|расскажи про|расскажи о)\s+/i, "")
+    .replace(/\s+/g, " ").trim();
+  if (!cleanQuery || cleanQuery.length < 2) cleanQuery = "помоги с задачей";
+  const wrap = document.createElement("div");
+  wrap.style.marginTop = "12px";
+  const btn = document.createElement("button");
+  btn.className = "expand-btn";
+  btn.innerHTML = ICONS.alice + '<span>Спросить у Алисы</span>';
+  btn.addEventListener("click", ()=>{
+    const encoded = encodeURIComponent(cleanQuery);
+    const aliceUrl = `https://yandex.ru/search/?text=${encoded}&alice=1`;
+    const w = window.open(aliceUrl, "_blank");
+    if (!w) window.location.href = aliceUrl;
+  });
+  const preview = document.createElement("div");
+  preview.style.cssText = "margin-top:6px;font-size:12px;color:var(--text-mute);line-height:1.4;";
+  preview.textContent = "Запрос: «" + cleanQuery + "»";
+  wrap.appendChild(btn);
+  wrap.appendChild(preview);
+  msgEl.appendChild(wrap);
+}
+
+async function handleSearch(query, opts){
+  opts = opts || {};
+  const statusEl = addStatus("Ищу «"+query+"»...", ICONS.search);
+  try {
+    const wikiResult = await fetchWikipedia(query, !!opts.full);
+    if (wikiResult){
+      statusEl.remove();
+      memory.lastWiki = wikiResult;
+      memory.state.topic = "wiki";
+      const short = shortenWiki(wikiResult.extract, opts.full ? 4000 : 500);
+      let imgHtml = "";
+      if (wikiResult.image && Math.random() < 0.65){
+        imgHtml = '<span class="wiki-img-wrap"><img class="wiki-img" src="'+wikiResult.image+'" alt="" loading="lazy"></span>';
+      }
+      const body = escapeHtml(short).replace(/\n/g,"<br>");
+      let html = imgHtml + body;
+      if (!opts.full) html += '<div><button class="expand-btn">'+ICONS.book+'<span>Показать всю статью</span></button></div>';
+      else html += '<br><a href="'+wikiResult.url+'" target="_blank">Открыть в Википедии →</a>';
+      html += '<span class="src">Источник: Википедия</span>';
+      const botEl = addMsg("", "bot");
+      streamText(botEl, html, ()=>{
+        const btn = botEl.querySelector(".expand-btn");
+        if (btn) btn.addEventListener("click", ()=> handleSearch(query, { full: true }));
+        const im = botEl.querySelector(".wiki-img");
+        if (im){
+          if (im.complete) im.classList.add("loaded");
+          else im.addEventListener("load", ()=>im.classList.add("loaded"));
+          im.addEventListener("error", ()=>{ im.parentElement.remove(); });
+          im.addEventListener("click", ()=> window.open(wikiResult.url, "_blank"));
+        }
+        persistMessage("bot", html);
+        updatePreviewFromLastBot();
+      });
+      return;
+    }
+    const ddgResult = await fetchDuckDuckGo(query);
+    if (ddgResult){
+      statusEl.remove();
+      let html = escapeHtml(ddgResult.text).replace(/\n/g,"<br>");
+      if (ddgResult.url) html += '<div style="margin-top:8px"><a href="'+ddgResult.url+'" target="_blank">Подробнее →</a></div>';
+      html += '<span class="src">Источник: '+escapeHtml(ddgResult.source)+'</span>';
+      const botEl = addMsg("", "bot");
+      streamText(botEl, html, ()=>{
+        persistMessage("bot", html);
+        updatePreviewFromLastBot();
+      });
+      return;
+    }
+    statusEl.remove();
+    const fallback = "Точного ответа не нашёл. Могу спросить у Алисы — нажми кнопку ниже.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, fallback, ()=>{
+      attachAliceButton(botEl, query);
+      persistMessage("bot", fallback);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const botEl = addMsg("", "bot");
+    const msg = "Не удалось получить ответ.";
+    streamText(botEl, msg, ()=>{
+      attachAliceButton(botEl, query);
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+async function handleFix(query){
+  const statusEl = addStatus("Проверяю текст...", ICONS.check);
+  try {
+    const [spell, gram] = await Promise.all([yandexSpell(query), languageToolCheck(query)]);
+    statusEl.remove();
+    let html = "";
+    if (spell && spell.length){
+      html += '<b>Орфография:</b><br>';
+      spell.forEach(e => {
+        html += '«'+escapeHtml(e.word)+'» → '+(e.s && e.s.length ? escapeHtml(e.s.slice(0,3).join(", ")) : "нет вариантов")+'<br>';
+      });
+    }
+    if (gram && gram.length){
+      html += (html ? '<br>' : '') + '<b>Грамматика и стиль:</b><br>';
+      gram.slice(0,5).forEach(m => {
+        html += '• '+escapeHtml(m.message)+'<br>';
+        if (m.replacements && m.replacements.length){
+          html += '  → '+m.replacements.slice(0,3).map(r=>escapeHtml(r.value)).join(", ")+'<br>';
+        }
+      });
+    }
+    if (!html) html = "Ошибок не нашёл. Текст грамотный.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const msg = "Не удалось проверить текст.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+async function handleTranslate(query, from, to){
+  const statusEl = addStatus("Перевожу...", ICONS.translate);
+  try {
+    const translated = await myMemoryTranslate(query, from, to);
+    statusEl.remove();
+    let html;
+    if (translated){
+      html = '<b>Перевод (' + from + '→' + to + '):</b><br><br>' + escapeHtml(translated);
+    } else {
+      html = "Не удалось перевести. Попробуй иначе.";
+    }
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const botEl = addMsg("", "bot");
+    const msg = "Не удалось перевести.";
+    streamText(botEl, msg, ()=>{
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+async function handleSummarize(query){
+  const statusEl = addStatus("Делаю резюме...", ICONS.summary);
+  try {
+    // Пробуем Pollinations с явным промптом
+    const prompt = "Сделай краткое резюме следующего текста в 2-3 предложениях на русском. Только суть, без вступлений:\n\n" + query;
+    let summary = await pollinationsText(prompt);
+    statusEl.remove();
+    let html;
+    if (summary && summary.length > 10){
+      // Убираем возможные вступления от модели
+      summary = summary.replace(/^(вот|конечно|разумеется|краткое резюме|резюме)[:：]?\s*/i, "").trim();
+      html = '<b>Резюме:</b><br><br>' + escapeHtml(summary);
+    } else {
+      // Fallback — простая эвристика: первые 2 предложения
+      const sentences = query.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 5);
+      const short = sentences.slice(0, 2).join(". ") + ".";
+      html = '<b>Резюме (упрощённое):</b><br><br>' + escapeHtml(short);
+    }
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const msg = "Не удалось сделать резюме.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+function handleQr(query){
+  const statusEl = addStatus("Генерирую QR...", ICONS.qr);
+  setTimeout(()=>{
+    statusEl.remove();
+    const url = qrUrl(query);
+    const html = '<b>QR-код:</b><br><span class="qr-wrap"><img src="'+url+'" alt="QR" onclick="window.open(\''+url+'\',\'_blank\')"></span><br><span class="src">Текст: «'+escapeHtml(query)+'»</span>';
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  }, 400);
+}
+
+function handleTimer(seconds, label){
+  let remaining = seconds;
+  const botEl = addMsg("", "bot");
+  botEl.innerHTML = '<div class="timer-badge">' + ICONS.timer + '<span class="timer-text">' + formatTime(seconds) + '</span></div>';
+  scrollBottom();
+  const textEl = botEl.querySelector(".timer-text");
+  const interval = setInterval(()=>{
+    remaining--;
+    if (remaining <= 0){
+      clearInterval(interval);
+      textEl.textContent = "Время вышло!";
+      botEl.querySelector(".timer-badge").classList.add("done");
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+      } catch {}
+      showToast("Таймер завершён");
+      persistMessage("bot", "Таймер на " + label + " завершён");
+      updatePreviewFromLastBot();
+      return;
+    }
+    textEl.textContent = formatTime(remaining);
+  }, 1000);
+  persistMessage("bot", "Таймер на " + label);
+  updatePreviewFromLastBot();
+}
+function formatTime(s){
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (m > 0) return m + ":" + String(sec).padStart(2,"0");
+  return "0:" + String(sec).padStart(2,"0");
+}
+
+async function handleGdz(query){
+  const statusEl = addStatus("Ищу ГДЗ...", ICONS.file);
+  try {
+    const results = await searchGdz(query.subject, query.num, query.author, query.grade);
+    statusEl.remove();
+    let html = "";
+    if (results && results.length){
+      html = "<b>Нашёл варианты:</b><br><br>";
+      results.slice(0, 6).forEach(r => {
+        html += '• <a href="'+r.url+'" target="_blank">'+escapeHtml(r.title)+'</a><br>';
+      });
+      html += "<br>Если не то — уточни автора.";
+      const botEl = addMsg("", "bot");
+      streamText(botEl, html, ()=>{
+        persistMessage("bot", html);
+        updatePreviewFromLastBot();
+      });
+    } else {
+      let aliceQuery = "ГДЗ";
+      if (query.grade) aliceQuery += " " + query.grade + " класс";
+      if (query.subject) aliceQuery += " " + query.subject;
+      if (query.author) aliceQuery += " " + query.author;
+      if (query.num) aliceQuery += " номер " + query.num;
+      let q = "";
+      if (query.grade) q += query.grade + " класс ";
+      if (query.subject) q += query.subject + " ";
+      if (query.author) q += query.author + " ";
+      if (query.num) q += "номер " + query.num;
+      html = "Прямых ссылок не нашёл. Могу поискать вручную:<br><br>";
+      const sites = [
+        { n: "gdz.top", u: "https://gdz.top/search?q=" },
+        { n: "reshak.ru", u: "https://reshak.ru/search/?q=" },
+        { n: "gdz.ru", u: "https://gdz.ru/search/?q=" },
+      ];
+      sites.forEach(s => {
+        html += '• <a href="'+s.u+encodeURIComponent(q)+'" target="_blank">'+s.n+'</a><br>';
+      });
+      html += '<br>Или спроси у Алисы:';
+      const botEl = addMsg("", "bot");
+      streamText(botEl, html, ()=>{
+        attachAliceButton(botEl, aliceQuery);
+        persistMessage("bot", html);
+        updatePreviewFromLastBot();
+      });
+    }
+  } catch(e){
+    statusEl.remove();
+    const msg = "Не удалось найти ГДЗ.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      attachAliceButton(botEl, "ГДЗ " + (query.subject||"") + " " + (query.num||""));
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+async function handleWolfram(query){
+  const statusEl = addStatus("Считаю...", ICONS.sigma);
+  try {
+    const answer = await wolframProxy(query);
+    statusEl.remove();
+    let html;
+    let showAlice = false;
+    if (answer) html = '<b>Ответ:</b><br>'+escapeHtml(answer).replace(/\n/g,"<br>");
+    else {
+      const local = safeMath(query);
+      if (local !== null) html = "Посчитал локально: "+escapeHtml(query)+" = <b>"+fmt(local)+"</b>";
+      else { html = "Не смог посчитать. Попробуй спросить у Алисы:"; showAlice = true; }
+    }
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      if (showAlice) attachAliceButton(botEl, query);
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const msg = "Не удалось получить ответ.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      attachAliceButton(botEl, query);
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+async function handlePollinationsText(query){
+  const statusEl = addStatus("Думаю...", ICONS.ai);
+  try {
+    const answer = await pollinationsText(query);
+    statusEl.remove();
+    let html, showAlice = false;
+    if (answer) html = escapeHtml(answer).replace(/\n/g,"<br>");
+    else {
+      const ddg = await fetchDuckDuckGo(query);
+      if (ddg){
+        html = escapeHtml(ddg.text).replace(/\n/g,"<br>");
+        if (ddg.url) html += '<div style="margin-top:8px"><a href="'+ddg.url+'" target="_blank">Подробнее →</a></div>';
+        html += '<span class="src">Источник: '+escapeHtml(ddg.source)+'</span>';
+      } else { html = "Не удалось получить ответ. Могу спросить у Алисы:"; showAlice = true; }
+    }
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      if (showAlice) attachAliceButton(botEl, query);
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const msg = "Не удалось получить ответ.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      attachAliceButton(botEl, query);
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+function handlePollinationsImage(query){
+  const statusEl = addStatus("Рисую...", ICONS.image);
+  setTimeout(()=>{
+    statusEl.remove();
+    const url = pollinationsImageUrl(query);
+    const html = '<b>Рисую:</b> «'+escapeHtml(query)+'»<br><span class="wiki-img-wrap" style="max-width:280px"><img class="wiki-img loaded" src="'+url+'" alt="" style="max-height:280px" onclick="window.open(\''+url+'\',\'_blank\')"></span><span class="src">Pollinations AI</span>';
+    const botEl = addMsg("", "bot");
+    streamText(botEl, html, ()=>{
+      persistMessage("bot", html);
+      updatePreviewFromLastBot();
+    });
+  }, 600);
+}
+
+async function handleWeather(city){
+  const statusEl = addStatus("Смотрю погоду в «"+city+"»...", ICONS.cloud);
+  const local = describeWeatherLocal(city);
+  try {
+    const real = await fetchRealWeather(city);
+    statusEl.remove();
+    if (real){
+      memory.lastCity = real.name.toLowerCase();
+      if (!memory.citiesSeen.includes(real.name.toLowerCase())) memory.citiesSeen.push(real.name.toLowerCase());
+      memory.state.topic = "weather";
+      const desc = wmoToText(real.code);
+      const word = real.temp > 15 ? "тепло" : (real.temp < 0 ? "холодно" : "прохладно");
+      const place = real.country ? real.name+", "+real.country : real.name;
+      const html = "<b>Погода: "+place+"</b><br><br>Сейчас "+desc+", "+real.temp+"°C. "+word.charAt(0).toUpperCase()+word.slice(1)+". Ветер "+real.wind+" м/с, влажность "+real.humidity+"%.";
+      const botEl = addMsg("", "bot");
+      streamText(botEl, html, ()=>{
+        persistMessage("bot", html);
+        updatePreviewFromLastBot();
+      });
+      return;
+    }
+    if (local){
+      memory.lastCity = resolveCity(city);
+      memory.state.topic = "weather";
+      const botEl = addMsg("", "bot");
+      streamText(botEl, local, ()=>{
+        persistMessage("bot", local);
+        updatePreviewFromLastBot();
+      });
+      return;
+    }
+    const msg = "Не нашёл город «"+city+"».";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  } catch(e){
+    statusEl.remove();
+    const msg = local || "Не удалось получить погоду.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{
+      persistMessage("bot", msg);
+      updatePreviewFromLastBot();
+    });
+  }
+}
+
+/* OCR */
+function loadTesseract(){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+plusBtn.addEventListener("click", ()=>{ fileInput.click(); });
+fileInput.addEventListener("change", async (e)=>{
+  const file = e.target.files[0];
+  if (!file) return;
+  fileInput.value = "";
+  if (welcomeEl) welcomeEl.style.display = "none";
+  const imgUrl = URL.createObjectURL(file);
+  const userMsg = document.createElement("div");
+  userMsg.className = "msg user";
+  const img = document.createElement("img");
+  img.src = imgUrl; img.className = "uploaded-img";
+  const cap = document.createElement("div");
+  cap.textContent = "Фото";
+  cap.style.marginTop = "6px"; cap.style.fontSize = "13px"; cap.style.opacity = "0.8";
+  userMsg.appendChild(img); userMsg.appendChild(cap);
+  messagesEl.appendChild(userMsg);
+  scrollBottom();
+  persistMessage("user", "[Фото]");
+  const statusEl = addStatus("Читаю текст с фото...", ICONS.search);
+  try {
+    if (!window.Tesseract) await loadTesseract();
+    const { data } = await Tesseract.recognize(file, "rus+eng", { logger: () => {} });
+    const recognized = (data.text || "").trim();
+    statusEl.remove();
+    if (!recognized || recognized.length < 3){
+      const msg = "Не смог разобрать текст. Попробуй чётче.";
+      const botEl = addMsg("", "bot");
+      streamText(botEl, msg, ()=>{ persistMessage("bot", msg); updatePreviewFromLastBot(); });
+      return;
+    }
+    const preview = recognized.length > 200 ? recognized.slice(0,200)+"…" : recognized;
+    const note = "Распознал: «"+escapeHtml(preview.replace(/\n/g," "))+"»";
+    const noteEl = addMsg("", "bot");
+    streamText(noteEl, note, ()=>{ persistMessage("bot", note); updatePreviewFromLastBot(); });
+    const firstLine = recognized.split("\n").map(s=>s.trim()).filter(Boolean)[0] || recognized;
+    setTimeout(()=> handleSearch(firstLine.slice(0, 80)), 400);
+  } catch(err){
+    statusEl.remove();
+    const msg = "Не удалось прочитать текст.";
+    const botEl = addMsg("", "bot");
+    streamText(botEl, msg, ()=>{ persistMessage("bot", msg); updatePreviewFromLastBot(); });
+  }
+});
+
+/* @ панель */
+atBtn.addEventListener("click", ()=>{
+  cmdPanel.classList.toggle("visible");
+  atBtn.classList.toggle("active");
+});
+cmdPanel.querySelectorAll(".cmd-item").forEach(item => {
+  item.addEventListener("click", ()=>{
+    inputEl.value = item.dataset.cmd;
+    inputEl.focus();
+    inputEl.dispatchEvent(new Event("input"));
+    cmdPanel.classList.remove("visible");
+    atBtn.classList.remove("active");
+  });
+});
+screenEl.addEventListener("click", (e)=>{
+  if (!cmdPanel.contains(e.target) && e.target !== atBtn){
+    cmdPanel.classList.remove("visible");
+    atBtn.classList.remove("active");
+  }
+});
+
+/* Голосовой ввод */
+let recognition = null;
+let isRecording = false;
+function initSpeechRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = "ru-RU";
+  r.continuous = false;
+  r.interimResults = true;
+  return r;
+}
+micBtn.addEventListener("click", ()=>{
+  if (!recognition){
+    recognition = initSpeechRecognition();
+    if (!recognition){
+      showToast("Голосовой ввод не поддерживается");
+      return;
+    }
+    recognition.onresult = (e)=>{
+      let transcript = "";
+      for (let i = e.resultIndex; i < e.results.length; i++){
+        transcript += e.results[i][0].transcript;
+      }
+      inputEl.value = transcript;
+      inputEl.dispatchEvent(new Event("input"));
+    };
+    recognition.onerror = ()=>{ stopRecording(); };
+    recognition.onend = ()=>{ stopRecording(); };
+  }
+  if (isRecording) stopRecording();
+  else startRecording();
+});
+function startRecording(){
+  try {
+    recognition.start();
+    isRecording = true;
+    micBtn.classList.add("recording");
+    showToast("Говорите...");
+  } catch {}
+}
+function stopRecording(){
+  try { recognition.stop(); } catch {}
+  isRecording = false;
+  micBtn.classList.remove("recording");
+}
+
+inputEl.addEventListener("input", ()=>{
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + "px";
+  updateSendBtn();
+  const len = inputEl.value.length;
+  if (len > 0){
+    charCounter.textContent = len;
+    charCounter.classList.add("visible");
+  } else {
+    charCounter.classList.remove("visible");
+  }
+  lastActivityAt = Date.now();
+  scheduleIdleCheck();
+});
+inputEl.addEventListener("keydown", (e)=>{
+  if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); if (isStreaming) return; send(); }
+});
+sendBtn.addEventListener("click", ()=>{
+  if (isStreaming){
+    if (streamTimer){ clearInterval(streamTimer); streamTimer = null; }
+    abortStream = true;
+    const cur = messagesEl.lastElementChild;
+    if (cur && cur.dataset.streaming === "1"){
+      cur.innerHTML = cur.dataset.full;
+      cur.dataset.streaming = "0";
+    }
+    isStreaming = false;
+    updateSendBtn();
+    return;
+  }
+  send();
+});
+
+function send(){
+  const text = inputEl.value.trim();
+  if (!text) return;
+  if (welcomeEl) welcomeEl.style.display = "none";
+  cmdPanel.classList.remove("visible");
+  atBtn.classList.remove("active");
+  lastActivityAt = Date.now();
+
+  addMsg(text, "user");
+  persistMessage("user", text);
+  inputEl.value = "";
+  inputEl.style.height = "auto";
+  charCounter.classList.remove("visible");
+  updateSendBtn();
+
+  const reply = botReplySync(text);
+
+  if (reply && reply.async === "search"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleSearch(reply.query, { full: reply.full }); }, 300 + Math.random()*300);
+    return;
+  }
+  if (reply && reply.async === "fix"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleFix(reply.query); }, 350);
+    return;
+  }
+  if (reply && reply.async === "translate"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleTranslate(reply.query, reply.from, reply.to); }, 350);
+    return;
+  }
+  if (reply && reply.async === "summarize"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleSummarize(reply.query); }, 350);
+    return;
+  }
+  if (reply && reply.async === "qr"){
+    showTypingIndicator();
+    setTimeout(()=>{ hideTypingIndicator(); handleQr(reply.query); }, 300);
+    return;
+  }
+  if (reply && reply.async === "timer"){
+    showTypingIndicator();
+    setTimeout(()=>{ hideTypingIndicator(); handleTimer(reply.seconds, reply.label); }, 300);
+    return;
+  }
+  if (reply && reply.async === "gdz"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleGdz(reply.query); }, 400);
+    return;
+  }
+  if (reply && reply.async === "wolfram"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleWolfram(reply.query); }, 400);
+    return;
+  }
+  if (reply && reply.async === "pollinations_text"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handlePollinationsText(reply.query); }, 400);
+    return;
+  }
+  if (reply && reply.async === "pollinations_image"){
+    showTypingIndicator();
+    setTimeout(()=>{ hideTypingIndicator(); handlePollinationsImage(reply.query); }, 400);
+    return;
+  }
+  if (reply && reply.async === "weather"){
+    showTypingIndicator();
+    setTimeout(async ()=>{ hideTypingIndicator(); await handleWeather(reply.city); }, 250 + Math.random()*250);
+    return;
+  }
+
+  showTypingIndicator();
+  const thinkDelay = 300 + Math.random()*500;
+  setTimeout(()=>{
+    hideTypingIndicator();
+    const botEl = document.createElement("div");
+    botEl.className = "msg bot";
+    messagesEl.appendChild(botEl);
+    const textHtml = applyTone(reply.text);
+    streamText(botEl, textHtml, ()=>{
+      if (reply.chips && reply.chips.length){
+        attachChips(botEl, reply.chips, (label)=>{
+          inputEl.value = label;
+          inputEl.dispatchEvent(new Event("input"));
+          send();
+        });
+      }
+      botEl.addEventListener("click", (e)=>{
+        if (e.target.tagName === "A" || e.target.closest("button")) return;
+        copyToClipboard(botEl.innerText);
+      });
+      persistMessage("bot", textHtml);
+      updatePreviewFromLastBot();
+    });
+  }, thinkDelay);
+}
+
+function scheduleIdleCheck(){
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(()=>{
+    if (!currentChatId) return;
+    if (isStreaming) return;
+    const since = Date.now() - lastActivityAt;
+    if (since < 60000) return;
+    if (!memory.state.topic) return;
+    const txt = pick(["Ещё думаешь? Я рядом.","Если что — я здесь.","Можем продолжить или сменить тему."]);
+    const botEl = addMsg("", "bot");
+    streamText(botEl, txt, ()=>{ persistMessage("bot", txt); updatePreviewFromLastBot(); });
+  }, 60000);
+}
+
+backBtn.addEventListener("click", goHome);
+newChatBtn.addEventListener("click", startNewChat);
+fabNew.addEventListener("click", startNewChat);
+fabSearch.addEventListener("click", openSearch);
+searchClose.addEventListener("click", closeSearch);
+searchInput.addEventListener("input", (e)=> renderSearchResults(e.target.value));
+themeBtn.addEventListener("click", ()=>{
+  const isDark = document.documentElement.classList.contains("dark");
+  applyTheme(!isDark);
+  localStorage.setItem(THEME_KEY, !isDark ? "dark" : "light");
+});
+menuBtn.addEventListener("click", ()=>{
+  const name = memory.userName ? "Привет, "+memory.userName+"!" : "Привет!";
+  addMsg(name+" Я check. Могу искать, считать, проверять текст, переводить, генерировать картинки и QR, ставить таймеры. Пиши что угодно.", "bot");
+});
+screenEl.addEventListener("click", (e)=>{
+  if (e.target === screenEl || e.target === welcomeEl || e.target.closest(".welcome")) inputEl.focus();
+});
+
+function init(){
+  initTheme();
+  renderWelcomeChips();
+  renderHome();
+  const lastId = localStorage.getItem(CURRENT_KEY);
+  if (lastId && getChat(lastId)) openChat(lastId);
+  else { homeScreen.classList.remove("hidden"); chatScreen.classList.add("hidden"); }
+  scheduleIdleCheck();
+}
+init();
+</script>
+</body>
+</html>
