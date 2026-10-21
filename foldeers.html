@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Desktop</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+  }
+
+  /* ===== ФОН — твоя вторая картинка ===== */
+  .wallpaper {
+    position: fixed;
+    inset: 0;
+    background-image: url('https://i.ibb.co/TBBv8RcK/IMG-4322.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+  }
+
+  /* ===== Две большие папки по центру ===== */
+  .folders {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7vw;
+    z-index: 5;
+    padding: 4vw;
+  }
+
+  .folder-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3vh;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .folder-block:active {
+    transform: scale(0.96);
+  }
+
+  /* Иконка папки — твоя текстура */
+  .folder-icon {
+    width: 40vw;
+    height: 36vw;
+    max-width: 360px;
+    max-height: 320px;
+    min-width: 160px;
+    min-height: 145px;
+    background-image: url('https://i.ibb.co/xtfmQyYF/5-20261021205232.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 14px;
+    filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  /* Текст под папками — БОЛЬШОЙ */
+  .folder-label {
+    font-size: 5.5vw;
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.95), 0 0 16px rgba(0,0,0,0.7);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  /* Ограничим размер текста на больших экранах */
+  @media (min-width: 700px) {
+    .folder-label { font-size: 42px; }
+  }
+
+  /* На узких экранах iPad в портрете */
+  @media (max-width: 500px) {
+    .folders { gap: 4vw; }
+    .folder-icon {
+      width: 42vw;
+      height: 38vw;
+    }
+    .folder-label { font-size: 6vw; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ФОН -->
+  <div class="wallpaper"></div>
+
+  <!-- Две большие папки по центру -->
+  <div class="folders">
+    <div class="folder-block">
+      <div class="folder-icon"></div>
+      <div class="folder-label">Загрузки</div>
+    </div>
+    <div class="folder-block">
+      <div class="folder-icon"></div>
+      <div class="folder-label">Программы</div>
+    </div>
+  </div>
+
+</body>
+</html>
