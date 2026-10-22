@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Liquid Glass Slider · Apple iOS 26</title>
+  <style>
+    /* ---------- RESET & BASE ---------- */
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 24px;
+      /* фон удалён — прозрачный */
+      background: transparent;
+    }
+
+    /* ---------- SLIDER CONTAINER ---------- */
+    .slider-container {
+      position: relative;
+      width: 360px;
+      max-width: 90vw;
+      height: 12px;
+      background: #d9dde3;
+      border-radius: 999px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: background 0.2s ease;
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* ---------- PROGRESS BAR ---------- */
+    .slider-progress {
+      position: absolute;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(117deg, #4facfe 0%, #2563eb 100%);
+      border-radius: 999px;
+      z-index: 1;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
+      /* плавный переход ширины для эффекта "переплывания" */
+      transition: width 0.45s cubic-bezier(0.23, 1, 0.32, 1),
+                  box-shadow 0.2s;
+      will-change: width;
+    }
+
+    /* ---------- THUMB (BASE) ---------- */
+    .slider-thumb-glass {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -50%);
+      width: 68px;
+      height: 44px;
+      border-radius: 999px;
+      cursor: grab;
+      z-index: 2;
+      background-color: #ffffff;
+      box-shadow: 0 2px 12px rgba(0, 20, 40, 0.12), 0 0 2px rgba(0, 10, 20, 0.08);
+      overflow: hidden;
+      transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1),
+                  height 0.18s ease,
+                  box-shadow 0.2s ease,
+                  background-color 0.25s ease;
+      will-change: left, transform;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .slider-thumb-glass:active {
+      transform: translate(-50%, -50%) scaleX(1.12) scaleY(0.92);
+      cursor: grabbing;
+    }
+
+    /* ---------- АКТИВНОЕ СОСТОЯНИЕ (стекло) ---------- */
+    .slider-thumb-glass.active {
+      background-color: transparent;
+      box-shadow: none;
+      transform: translate(-50%, -50%) scaleX(1.1) scaleY(0.94);
+      transition: transform 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+                  background-color 0.15s ease,
+                  box-shadow 0.15s ease;
+    }
+
+    /* Слои стекла */
+    .slider-thumb-glass-filter,
+    .slider-thumb-glass-overlay,
+    .slider-thumb-glass-specular {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      pointer-events: none;
+    }
+
+    .slider-thumb-glass-filter {
+      z-index: 0;
+      backdrop-filter: blur(0.6px);
+      -webkit-backdrop-filter: blur(0.6px);
+      filter: url(#mini-liquid-lens);
+    }
+
+    .slider-thumb-glass-overlay {
+      z-index: 1;
+      background-color: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .slider-thumb-glass-specular {
+      z-index: 2;
+      box-shadow:
+        inset 1px 1px 0 rgba(69, 168, 243, 0.3),
+        inset 1px 4px 0 rgba(28, 63, 90, 0.06),
+        inset 0 0 24px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 0 rgba(69, 168, 243, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    .slider-thumb-glass.active .slider-thumb-glass-filter,
+    .slider-thumb-glass.active .slider-thumb-glass-overlay,
+    .slider-thumb-glass.active .slider-thumb-glass-specular {
+      opacity: 1;
+    }
+
+    /* ---------- ПЛАВНАЯ АНИМАЦИЯ "ПЛАВАНИЯ" ---------- */
+    .slider-thumb-glass.glide {
+      transition: left 0.45s cubic-bezier(0.23, 1, 0.32, 1) !important;
+    }
+
+    .slider-thumb-glass.glide.active {
+      animation: liquidFloat 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards;
+    }
+
+    @keyframes liquidFloat {
+      0% {
+        transform: translate(-50%, -50%) scaleX(1.08) scaleY(0.96);
+      }
+      35% {
+        transform: translate(-50%, -50%) scaleX(1.16) scaleY(0.88);
+      }
+      70% {
+        transform: translate(-50%, -50%) scaleX(0.94) scaleY(1.04);
+      }
+      100% {
+        transform: translate(-50%, -50%) scaleX(1.1) scaleY(0.94);
+      }
+    }
+
+    /* ---------- SVG-фильтр (скрытый) ---------- */
+    .svg-defs {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    /* ---------- АДАПТИВ ---------- */
+    @media (max-width: 480px) {
+      .slider-container {
+        width: 280px;
+        height: 11px;
+      }
+      .slider-thumb-glass {
+        width: 58px;
+        height: 38px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ---------- SLIDER ---------- -->
+  <div class="slider-container" id="slider">
+    <div class="slider-progress" id="progress"></div>
+    <div class="slider-thumb-glass" id="thumb">
+      <div class="slider-thumb-glass-filter"></div>
+      <div class="slider-thumb-glass-overlay"></div>
+      <div class="slider-thumb-glass-specular"></div>
+    </div>
+  </div>
+
+  <!-- ---------- SVG FILTER (liquid lens) ---------- -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true">
+    <filter id="mini-liquid-lens" x="-50%" y="-50%" width="200%" height="200%">
+      <feImage x="0" y="0" result="normalMap" xlink:href="data:image/svg+xml;utf8,
+        <svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>
+          <radialGradient id='invmap' cx='50%' cy='50%' r='75%'>
+            <stop offset='0%' stop-color='rgb(128,128,255)'/>
+            <stop offset='90%' stop-color='rgb(255,255,255)'/>
+          </radialGradient>
+          <rect width='100%' height='100%' fill='url(#invmap)'/>
+        </svg>" />
+      <feDisplacementMap in="SourceGraphic" in2="normalMap" scale="-252" xChannelSelector="R" yChannelSelector="G"
+        result="displaced" />
+      <feMerge>
+        <feMergeNode in="displaced" />
+      </feMerge>
+    </filter>
+  </svg>
+
+  <!-- ---------- SCRIPT ---------- -->
+  <script>
+    ;(() => {
+      const slider = document.getElementById('slider');
+      const progress = document.getElementById('progress');
+      const thumb = document.getElementById('thumb');
+
+      let isDragging = false;
+      let sliderRect = slider.getBoundingClientRect();
+      let glideTimer = null;
+
+      const clampPercent = (p) => Math.max(0, Math.min(100, p));
+
+      /**
+       * Обновляет позицию ползунка и прогресс-бар.
+       * @param {number} percent — 0..100
+       * @param {boolean} smooth — включает плавные переходы (и для ползунка, и для линии)
+       */
+      const updateThumbAndProgress = (percent, smooth = false) => {
+        percent = clampPercent(percent);
+        const px = (percent / 100) * sliderRect.width;
+
+        // Прогресс-бар — плавно переплывает
+        if (smooth) {
+          progress.style.transition = 'width 0.45s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s';
+        } else {
+          progress.style.transition = 'none';
+        }
+        progress.style.width = `${percent}%`;
+
+        // Ползунок — плавный glide
+        if (smooth) {
+          thumb.classList.add('glide');
+          if (glideTimer) clearTimeout(glideTimer);
+          glideTimer = setTimeout(() => {
+            thumb.classList.remove('glide');
+            glideTimer = null;
+          }, 500);
+        } else {
+          thumb.classList.remove('glide');
+        }
+
+        thumb.style.left = `${px}px`;
+      };
+
+      const getPercentFromClientX = (clientX) => {
+        const offsetX = clientX - sliderRect.left;
+        return clampPercent((offsetX / sliderRect.width) * 100);
+      };
+
+      const moveToClientX = (clientX) => {
+        const percent = getPercentFromClientX(clientX);
+        updateThumbAndProgress(percent, false);
+      };
+
+      const glideToPercent = (targetPercent) => {
+        targetPercent = clampPercent(targetPercent);
+        thumb.classList.add('active');
+        updateThumbAndProgress(targetPercent, true);
+      };
+
+      // ----- мышь -----
+      const onMouseDown = (e) => {
+        if (e.target === thumb || thumb.contains(e.target)) {
+          e.preventDefault();
+          isDragging = true;
+          sliderRect = slider.getBoundingClientRect();
+          moveToClientX(e.clientX);
+          thumb.classList.add('active');
+          thumb.classList.remove('glide');
+          if (glideTimer) { clearTimeout(glideTimer); glideTimer = null; }
+          return;
+        }
+
+        e.preventDefault();
+        sliderRect = slider.getBoundingClientRect();
+        const targetPercent = getPercentFromClientX(e.clientX);
+
+        thumb.classList.add('active');
+        glideToPercent(targetPercent);
+
+        if (glideTimer) clearTimeout(glideTimer);
+        glideTimer = setTimeout(() => {
+          if (!isDragging) {
+            thumb.classList.remove('active');
+            thumb.classList.remove('glide');
+          }
+          glideTimer = null;
+        }, 500);
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        moveToClientX(e.clientX);
+      };
+
+      const stopDrag = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        setTimeout(() => {
+          if (!isDragging) {
+            thumb.classList.remove('active');
+            thumb.classList.remove('glide');
+          }
+        }, 80);
+      };
+
+      // ----- touch -----
+      const onTouchStart = (e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+
+        if (e.target === thumb || thumb.contains(e.target)) {
+          e.preventDefault();
+          isDragging = true;
+          sliderRect = slider.getBoundingClientRect();
+          moveToClientX(touch.clientX);
+          thumb.classList.add('active');
+          thumb.classList.remove('glide');
+          if (glideTimer) { clearTimeout(glideTimer); glideTimer = null; }
+          return;
+        }
+
+        e.preventDefault();
+        sliderRect = slider.getBoundingClientRect();
+        const targetPercent = getPercentFromClientX(touch.clientX);
+
+        thumb.classList.add('active');
+        glideToPercent(targetPercent);
+
+        if (glideTimer) clearTimeout(glideTimer);
+        glideTimer = setTimeout(() => {
+          if (!isDragging) {
+            thumb.classList.remove('active');
+            thumb.classList.remove('glide');
+          }
+          glideTimer = null;
+        }, 500);
+      };
+
+      const onTouchMove = (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        if (touch) {
+          e.preventDefault();
+          moveToClientX(touch.clientX);
+        }
+      };
+
+      const stopTouchDrag = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        setTimeout(() => {
+          if (!isDragging) {
+            thumb.classList.remove('active');
+            thumb.classList.remove('glide');
+          }
+        }, 80);
+      };
+
+      // ----- инициализация -----
+      const init = (initialValue = 40) => {
+        sliderRect = slider.getBoundingClientRect();
+        // при инициализации линия ставится мгновенно, без анимации
+        progress.style.transition = 'none';
+        updateThumbAndProgress(initialValue, false);
+        thumb.classList.remove('active');
+      };
+
+      // ----- обработчики -----
+      slider.addEventListener('mousedown', onMouseDown);
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', stopDrag);
+
+      slider.addEventListener('touchstart', onTouchStart, { passive: false });
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend', stopTouchDrag);
+      document.addEventListener('touchcancel', stopTouchDrag);
+
+      thumb.addEventListener('dragstart', (e) => e.preventDefault());
+
+      window.addEventListener('resize', () => {
+        sliderRect = slider.getBoundingClientRect();
+        const currentLeft = parseFloat(thumb.style.left) || 0;
+        const currentPercent = (currentLeft / sliderRect.width) * 100;
+        updateThumbAndProgress(currentPercent, false);
+      });
+
+      init(40);
+    })();
+  </script>
+</body>
+</html>
