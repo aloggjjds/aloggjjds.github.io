@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPad Air Info</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .device-image {
+            width: 220px;
+            height: 140px;
+            margin-bottom: 40px;
+            background-color: #3b99fc;
+            border: 8px solid #1a1a1a;
+            border-radius: 10px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .device-image::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: -10%;
+            width: 120%;
+            height: 6px;
+            background-color: #d1d1d1;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #b0b0b0;
+        }
+        
+        .device-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 45px;
+            height: 8px;
+            background-color: #1a1a1a;
+            border-radius: 0 0 4px 4px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #888888;
+            margin-bottom: 35px;
+        }
+
+        .specs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 35px;
+            font-size: 15px;
+            align-items: center; 
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+        }
+
+        .spec-label {
+            color: #333333;
+            text-align: right;
+            padding-right: 12px;
+            width: 150px; 
+        }
+
+        .spec-value {
+            color: #888888;
+            text-align: left;
+            width: 150px; 
+        }
+
+        /* Стиль для режима редактирования */
+        [contenteditable="true"] {
+            outline: 2px dashed #3b99fc;
+            background-color: #f0f7ff;
+            border-radius: 4px;
+            cursor: text;
+            padding: 0 4px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #888888;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 2px 0;
+        }
+
+        /* Подсказка для секретного слова */
+        #macTrigger {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        #macTrigger:active {
+            color: #3b99fc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content-wrapper">
+        <div class="device-image"></div>
+
+        <!-- Оборачиваем элементы в класс editable-block для удобства скрипта -->
+        <h1 class="editable-block">iPad Air</h1>
+        <div class="subtitle editable-block">M3, 2025</div>
+
+        <div class="specs">
+            <div class="spec-row">
+                <div class="spec-label editable-block">Чип</div>
+                <div class="spec-value editable-block">Apple M3</div>
+            </div>
+            <div class="spec-row">
+                <div class="spec-label editable-block">Память</div>
+                <div class="spec-value editable-block">512 ГБ</div>
+            </div>
+            <div class="spec-row">
+                <div class="spec-label editable-block">Загрузочный диск</div>
+                <div class="spec-value editable-block">Macintosh HD</div>
+            </div>
+            <div class="spec-row">
+                <div class="spec-label editable-block">Серийный номер</div>
+                <div class="spec-value editable-block">XXXXXXXXXX</div>
+            </div>
+            
+            <div class="spec-row">
+                <div class="spec-label editable-block">iPadOS</div>
+                <div class="spec-value editable-block">Golden Gate iPad is 27</div>
+            </div>
+            <div class="spec-row">
+                <!-- Секретный переключатель -->
+                <div class="spec-label" id="macTrigger">macOS</div> 
+                <div class="spec-value editable-block">Golden Gate 27.0</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <!-- Сертификация и "и" удалены -->
+            <p>© 1983–2026 Apple Inc.</p>
+            <p>Все права защищены.</p>
+        </div>
+    </div>
+
+    <script>
+        // Ждем полной загрузки страницы
+        window.onload = function() {
+            
+            const editables = document.querySelectorAll('.editable-block');
+            const macTrigger = document.getElementById('macTrigger');
+            
+            let clickCount = 0;
+            let clickTimer;
+            let isEditing = false;
+
+            // 1. Восстановление текста из LocalStorage
+            editables.forEach((el, index) => {
+                const savedText = localStorage.getItem('ipadInfo_' + index);
+                if (savedText !== null) {
+                    el.innerText = savedText;
+                }
+            });
+
+            // 2. Функция включения редактирования
+            function turnOnEdit() {
+                isEditing = true;
+                editables.forEach(el => {
+                    el.setAttribute('contenteditable', 'true');
+                });
+                macTrigger.style.color = '#3b99fc';
+                console.log('Редактирование ВКЛЮЧЕНО. Нажмите на macOS 1 раз, чтобы сохранить.');
+            }
+
+            // 3. Функция выключения и сохранения
+            function turnOffAndSave() {
+                isEditing = false;
+                editables.forEach((el, index) => {
+                    el.setAttribute('contenteditable', 'false');
+                    // Сохраняем текст в память браузера
+                    localStorage.setItem('ipadInfo_' + index, el.innerText);
+                });
+                macTrigger.style.color = '#333333';
+                console.log('Изменения СОХРАНЕНЫ. Редактирование ВЫКЛЮЧЕНО.');
+            }
+
+            // 4. Обработка кликов
+            macTrigger.addEventListener('click', function(e) {
+                
+                // Если режим уже включен - выключаем и сохраняем
+                if (isEditing) {
+                    turnOffAndSave();
+                    return;
+                }
+
+                // Если выключен - считаем клики
+                clickCount++;
+                
+                // Сбрасываем счетчик, если клики идут медленно
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(function() {
+                    clickCount = 0;
+                }, 1500);
+
+                // 5 кликов - включаем
+                if (clickCount >= 5) {
+                    turnOnEdit();
+                    clickCount = 0; // сбрасываем
+                }
+            });
+
+            // Сохранение при случайном закрытии страницы во время редактирования
+            window.addEventListener('beforeunload', function() {
+                 if (isEditing) {
+                     turnOffAndSave();
+                 }
+            });
+        };
+    </script>
+</body>
+</html>
